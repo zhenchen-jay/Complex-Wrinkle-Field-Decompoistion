@@ -8,13 +8,11 @@ project(CWFDecompositionGui)
 # Add your project files
 # Create an executable
 file(GLOB SRCFILES  
-    ../../dep/SecStencils/*.h
     ../../Upsampling/*.h
     ../../MeshLib/*.h
     ../../*.h
+    ../../*.hpp
     *.h
-
-    ../../dep/SecStencils/*.cpp
     ../../Upsampling/*.cpp
     ../../MeshLib/*.cpp
     ../../*.cpp

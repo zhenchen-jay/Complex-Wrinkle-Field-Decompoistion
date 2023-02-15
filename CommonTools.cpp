@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <fstream>
 
-void quadS3(double w, std::vector<QuadraturePoints>& quadLists)
+static void quadS3(double w, std::vector<QuadraturePoints>& quadLists)
 {
 	QuadraturePoints point;
 	point.u = 1. / 3.;
@@ -18,7 +18,7 @@ void quadS3(double w, std::vector<QuadraturePoints>& quadLists)
 	point.weight = w;
 }
 
-void quadS21(double x, double w, std::vector<QuadraturePoints>& quadLists)
+static void quadS21(double x, double w, std::vector<QuadraturePoints>& quadLists)
 {
 	QuadraturePoints point;
 
@@ -35,7 +35,7 @@ void quadS21(double x, double w, std::vector<QuadraturePoints>& quadLists)
 	}
 }
 
-void quadS111(double x, double y, double w, std::vector<QuadraturePoints>& quadLists)
+static void quadS111(double x, double y, double w, std::vector<QuadraturePoints>& quadLists)
 {
 	QuadraturePoints point;
 	double pos[3];
@@ -348,20 +348,20 @@ Eigen::MatrixXd SPDProjection(Eigen::MatrixXd A)
 	return posHess;
 }
 
-Eigen::VectorXd faceVec2IntrinsicEdgeVec(const Eigen::MatrixXd& v, const Eigen::MatrixXd& pos, const MeshConnectivity& mesh)
+Eigen::VectorXd faceVec2IntrinsicEdgeVec(const Eigen::MatrixXd& v, const Mesh& mesh)
 {
-	int nedges = mesh.nEdges();
+	int nedges = mesh.GetEdgeCount();
 	Eigen::VectorXd edgeOmega(nedges);
 
 	for (int i = 0; i < nedges; i++)
 	{
-		int fid0 = mesh.edgeFace(i, 0);
-		int fid1 = mesh.edgeFace(i, 1);
+		int fid0 = mesh.GetEdgeFaces(i)[0];
+		int fid1 = mesh.GetEdgeFaces(i)[1];
 
-		int vid0 = mesh.edgeVertex(i, 0);
-		int vid1 = mesh.edgeVertex(i, 1);
+		int vid0 = mesh.GetFaceVerts(i)[0];
+		int vid1 = mesh.GetFaceVerts(i)[1];
 
-		Eigen::Vector3d e = pos.row(vid1) - pos.row(vid0);
+		Eigen::Vector3d e = mesh.GetVertPos(vid1) - mesh.GetVertPos(vid0);
 
 		if (fid0 == -1)
 			edgeOmega(i) = v.row(fid1).dot(e);
@@ -373,283 +373,43 @@ Eigen::VectorXd faceVec2IntrinsicEdgeVec(const Eigen::MatrixXd& v, const Eigen::
 	return edgeOmega;
 }
 
-Eigen::VectorXd vertexVec2IntrinsicVec(const Eigen::MatrixXd& v, const Eigen::MatrixXd& pos, const MeshConnectivity& mesh)
+Eigen::VectorXd vertexVec2IntrinsicVec(const Eigen::MatrixXd& v, Mesh& mesh)
 {
-	int nedges = mesh.nEdges();
+	int nedges = mesh.GetEdgeCount();
 	Eigen::VectorXd edgeOmega(nedges);
 
 	for (int i = 0; i < nedges; i++)
 	{
-		int vid0 = mesh.edgeVertex(i, 0);
-		int vid1 = mesh.edgeVertex(i, 1);
+		int vid0 = mesh.GetEdgeVerts(i)[0];
+		int vid1 = mesh.GetEdgeVerts(i)[1];
 
-		Eigen::Vector3d e = pos.row(vid1) - pos.row(vid0);
+		Eigen::Vector3d e = mesh.GetVertPos(vid1) - mesh.GetVertPos(vid0);
 		edgeOmega(i) = (v.row(vid0) + v.row(vid1)).dot(e) / 2;
 	}
 	return edgeOmega;
 }
 
-Eigen::MatrixXd vertexVec2IntrinsicHalfEdgeVec(const Eigen::MatrixXd& v, const Eigen::MatrixXd& pos, const MeshConnectivity& mesh)
+Eigen::MatrixXd intrinsicEdgeVec2FaceVec(const Eigen::VectorXd& w, const Mesh& mesh)
 {
-	int nedges = mesh.nEdges();
-	Eigen::MatrixXd edgeOmega(nedges, 2);
-
-	for (int i = 0; i < nedges; i++)
-	{
-		int vid0 = mesh.edgeVertex(i, 0);
-		int vid1 = mesh.edgeVertex(i, 1);
-
-		Eigen::Vector3d e = pos.row(vid1) - pos.row(vid0);
-		edgeOmega(i, 0) = v.row(vid0).dot(e);
-		edgeOmega(i, 1) = -v.row(vid1).dot(e);
-	}
-	return edgeOmega;
-}
-
-struct UnionFind
-{
-	std::vector<int> parent;
-	std::vector<int> sign;
-	UnionFind(int items)
-	{
-		parent.resize(items);
-		sign.resize(items);
-		for (int i = 0; i < items; i++)
-		{
-			parent[i] = i;
-			sign[i] = 1;
-		}
-	}
-
-	std::pair<int, int> find(int i)
-	{
-		if (parent[i] != i)
-		{
-			auto newparent = find(parent[i]);
-			sign[i] *= newparent.second;
-			parent[i] = newparent.first;
-		}
-
-		return { parent[i], sign[i] };
-	}
-
-	void dounion(int i, int j, int usign)
-	{
-		auto xroot = find(i);
-		auto yroot = find(j);
-		if (xroot.first != yroot.first)
-		{
-			parent[xroot.first] = yroot.first;
-			sign[xroot.first] = usign * xroot.second * yroot.second;
-		}
-	}
-};
-
-void combField(const Eigen::MatrixXi& F, const Eigen::MatrixXd& w, Eigen::MatrixXd& combedW)
-{
-	int nfaces = F.rows();
-	int nverts = w.rows();
-
-	UnionFind uf(nverts);
-	MeshConnectivity mesh(F);
-
-	struct Visit
-	{
-		int edge;
-		int sign;
-		double norm;
-		bool operator<(const Visit& other) const
-		{
-			return norm > other.norm;
-		}
-	};
-
-	std::priority_queue<Visit> pq;
-
-	int nedges = mesh.nEdges();
-	for (int i = 0; i < nedges; i++)
-	{
-		int vid1 = mesh.edgeVertex(i, 0);
-		int vid2 = mesh.edgeVertex(i, 1);
-
-
-		Eigen::Vector3d curw = w.row(vid1);
-		Eigen::Vector3d nextw = w.row(vid2);
-
-		double innerp = curw.dot(nextw);
-		int sign = (innerp < 0 ? -1 : 1);
-
-		double normcw = curw.norm();
-		double normnw = nextw.norm();
-		double negnorm = -std::min(normcw, normnw);
-		pq.push({ i, sign, negnorm });
-
-
-	}
-
-	while (!pq.empty())
-	{
-		auto next = pq.top();
-		pq.pop();
-		uf.dounion(mesh.edgeVertex(next.edge, 0), mesh.edgeVertex(next.edge, 1), next.sign);
-	}
-
-	combedW.resize(nverts, 3);
-	for (int i = 0; i < nverts; i++)
-	{
-		int sign = uf.find(i).second;
-		combedW.row(i) = w.row(i) * sign;
-	}
-
-}
-
-Eigen::MatrixXd intrinsicHalfEdgeVec2VertexVec(const Eigen::MatrixXd& v, const Eigen::MatrixXd& pos, const MeshConnectivity& mesh)
-{
-	int nedges = mesh.nEdges();
-	int nverts = pos.rows();
-	Eigen::MatrixXd vertOmega(nverts, 3);
-	vertOmega.setZero();
-
-    Eigen::MatrixXd vertNormals;
-    igl::per_vertex_normals(pos, mesh.faces(), vertNormals);
-
-	Eigen::SparseMatrix<double> A;
-	std::vector<Eigen::Triplet<double>> T;
-
-	Eigen::VectorXd edgeVec(2 * nedges);
-
-	for (int i = 0; i < nedges; i++)
-	{
-		int vid0 = mesh.edgeVertex(i, 0);
-		int vid1 = mesh.edgeVertex(i, 1);
-
-		Eigen::Vector3d e = pos.row(vid1) - pos.row(vid0);
-		edgeVec.segment<2>(2 * i) = v.row(i);
-		for (int j = 0; j < 3; j++)
-		{
-			T.push_back({ 2 * i, 3 * vid0 + j, e(j) });
-			T.push_back({ 2 * i + 1, 3 * vid1 + j, -e(j) });
-		}
-	}
-	A.resize(2 * nedges, 3 * nverts);
-	A.setFromTriplets(T.begin(), T.end());
-
-    Eigen::SparseMatrix<double> AT, AAT;
-    AT = A.transpose();
-    AAT = AT * A;
-
-    Eigen::VectorXd ATb = AT * edgeVec;
-
-    T.clear();
-    for (int k=0; k<AAT.outerSize(); ++k)
-        for (Eigen::SparseMatrix<double>::InnerIterator it(AAT,k); it; ++it)
-        {
-            T.push_back(Eigen::Triplet<double>(it.row(), it.col(), it.value()));
-        }
-
-    for(int i = 0; i < nverts; i++)
-    {
-        for(int j = 0; j < 3; j++)
-        {
-            T.push_back({3 * i + j, 3 * nverts + i, vertNormals(i, j)});
-            T.push_back({3 * nverts + i, 3 * i + j, vertNormals(i, j)});
-        }
-    }
-
-    A.resize(4 * nverts, 4 * nverts);
-    A.setFromTriplets(T.begin(), T.end());
-
-    Eigen::VectorXd rhs(4 * nverts);
-    rhs.setZero();
-    rhs.segment(0, 3 * nverts) = ATb;
-
-	//Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver(A);
-	/*Eigen::SPQR<Eigen::SparseMatrix<double>> solver(A);
-	Eigen::VectorXd sol = solver.solve(rhs);
-
-	for (int i = 0; i < nverts; i++)
-	{
-		vertOmega.row(i) = sol.segment<3>(3 * i);
-	}*/
-	return vertOmega;
-}
-
-Eigen::MatrixXd intrinsicHalfEdgeVec2FaceVec(const Eigen::MatrixXd& w, const Eigen::MatrixXd& pos, const MeshConnectivity& mesh)
-{
-    int nfaces = mesh.nFaces();
-
-    Eigen::MatrixXd faceVec = Eigen::MatrixXd::Zero(nfaces, 3);
-    for(int i = 0; i < nfaces; i++)
-    {
-//        std::cout << "face: " << i  << " of total faces " << nfaces << std::endl;
-        for(int j = 0; j < 3; j++)
-        {
-            int vid = mesh.faceVertex(i, j);
-
-            int eid0 = mesh.faceEdge(i, (j + 1) % 3);
-            int eid1 = mesh.faceEdge(i, (j + 2) % 3);
-
-            Eigen::Vector3d e0 = pos.row(mesh.faceVertex(i, (j + 2) % 3)) - pos.row(vid);
-            Eigen::Vector3d e1 = pos.row(mesh.faceVertex(i, (j + 1) % 3)) - pos.row(vid);
-
-            int flag0 = 0, flag1 = 0;
-            Eigen::Vector2d rhs;
-
-            if (mesh.edgeVertex(eid0, 0) == vid)
-            {
-                flag0 = 0;
-                rhs(0) = w(eid0, 0);
-            }
-            else
-            {
-                flag0 = 1;
-                rhs(0) = w(eid0, 1);
-            }
-
-
-            if (mesh.edgeVertex(eid1, 0) == vid)
-            {
-                flag1 = 0;
-                rhs(1) = w(eid1, 0);
-            }
-            else
-            {
-                flag1 = 1;
-                rhs(1) = w(eid1, 1);
-            }
-
-            Eigen::Matrix2d I;
-            I << e0.dot(e0), e0.dot(e1), e1.dot(e0), e1.dot(e1);
-            Eigen::Vector2d sol = I.inverse() * rhs;
-
-            faceVec.row(i) += (sol(0) * e0 + sol(1) * e1) / 3;
-        }
-    }
-    return faceVec;
-}
-
-Eigen::MatrixXd intrinsicEdgeVec2FaceVec(const Eigen::VectorXd& w, const Eigen::MatrixXd& pos, const MeshConnectivity& mesh)
-{
-	int nfaces = mesh.nFaces();
+	int nfaces = mesh.GetFaceCount();
 
 	Eigen::MatrixXd faceVec = Eigen::MatrixXd::Zero(nfaces, 3);
 	for (int i = 0; i < nfaces; i++)
-	{
-		//        std::cout << "face: " << i  << " of total faces " << nfaces << std::endl;
+    {
 		for (int j = 0; j < 3; j++)
 		{
-			int vid = mesh.faceVertex(i, j);
+			int vid = mesh.GetFaceVerts(i)[j];
 
-			int eid0 = mesh.faceEdge(i, (j + 1) % 3);
-			int eid1 = mesh.faceEdge(i, (j + 2) % 3);
+			int eid0 = mesh.GetFaceEdges(i)[j];
+			int eid1 = mesh.GetFaceEdges(i)[(j + 2) % 2];
 
-			Eigen::Vector3d e0 = pos.row(mesh.faceVertex(i, (j + 2) % 3)) - pos.row(vid);
-			Eigen::Vector3d e1 = pos.row(mesh.faceVertex(i, (j + 1) % 3)) - pos.row(vid);
+			Eigen::Vector3d e0 = mesh.GetVertPos(mesh.GetFaceVerts(i)[(j + 1) % 3]) - mesh.GetVertPos(vid);
+			Eigen::Vector3d e1 = mesh.GetVertPos(mesh.GetFaceVerts(i)[(j + 2) % 3]) - mesh.GetVertPos(vid);
 
 			int flag0 = 1, flag1 = 1;
 			Eigen::Vector2d rhs;
 
-			if (mesh.edgeVertex(eid0, 0) == vid)
+			if (mesh.GetEdgeVerts(eid0)[0] == vid)
 			{
 				flag0 = 1;
 			}
@@ -659,7 +419,7 @@ Eigen::MatrixXd intrinsicEdgeVec2FaceVec(const Eigen::VectorXd& w, const Eigen::
 			}
 
 
-			if (mesh.edgeVertex(eid1, 0) == vid)
+			if (mesh.GetEdgeVerts(eid1)[0] == vid)
 			{
 				flag1 = 1;
 			}
@@ -680,122 +440,6 @@ Eigen::MatrixXd intrinsicEdgeVec2FaceVec(const Eigen::VectorXd& w, const Eigen::
 	return faceVec;
 }
 
-double unitMagEnergy(const std::vector<std::complex<double>>& zvals, Eigen::VectorXd* deriv, std::vector<Eigen::Triplet<double>>* hess, bool isProj)
-{
-	int nverts = zvals.size();
-	double energy = 0;
-	
-	if (deriv)
-		deriv->setZero(2 * nverts);
-
-	if (hess)
-		hess->clear();
-
-	double sum = 0;
-
-	Eigen::VectorXd derivSum(2 * nverts);
-
-	for (int i = 0; i < nverts; i++)
-	{
-		sum += zvals[i].real()* zvals[i].real() + zvals[i].imag() * zvals[i].imag();
-		if (deriv)
-		{
-			derivSum.segment<2>(2 * i) << 2 * zvals[i].real(), 2 * zvals[i].imag();
-		}
-	}
-
-	energy = 0.5 * (sum - 1) * (sum - 1);
-
-	if (deriv)
-		*deriv = (sum - 1) * derivSum;
-
-	if (hess)
-	{
-		// hess is dense. Really bad
-	}
-
-	return energy;
-}
-
-Eigen::Vector3d rotateSingleVector(const Eigen::Vector3d& vec, const Eigen::Vector3d& axis, double angle)
-{
-	Eigen::Vector3d rotVec;
-
-	// first normalize axis
-	double ux = axis(0) / axis.norm(), uy = axis(1) / axis.norm(), uz = axis(2) / axis.norm();
-	Eigen::Matrix3d rotMat;
-
-	double c = std::cos(angle);
-	double s = std::sin(angle);
-	rotMat << c + ux * ux * (1 - c), ux* uy* (1 - c) - uz * s, ux* uz* (1 - c) + uy * s,
-		uy* ux* (1 - c) + uz * s, c + uy * uy * (1 - c), uy* uz* (1 - c) - ux * s,
-		uz* ux* (1 - c) - uy * s, uz* uy* (1 - c) + ux * s, c + uz * uz * (1 - c);
-
-	rotVec = rotMat * vec;
-	return rotVec;
-}
-
-void rotateIntrinsicVector(const Eigen::MatrixXd& V, const MeshConnectivity& mesh, const Eigen::MatrixXd& halfEdgeW, const std::vector<RotateVertexInfo>& rotVerts, Eigen::MatrixXd& rotHalfEdgeW)
-{
-	Eigen::MatrixXd vertNormals;
-	igl::per_vertex_normals(V, mesh.faces(), vertNormals);
-
-	Eigen::MatrixXd vertVec = intrinsicHalfEdgeVec2VertexVec(halfEdgeW, V, mesh);
-
-	for (int i = 0; i < rotVerts.size(); i++)
-	{
-		int vid = rotVerts[i].vid;
-		vertVec.row(vid) = rotateSingleVector(vertVec.row(vid), vertNormals.row(vid), rotVerts[i].angle);
-	}
-
-	rotHalfEdgeW = vertexVec2IntrinsicHalfEdgeVec(vertVec, V, mesh);
-}
-
-void buildVertexNeighboringInfo(const MeshConnectivity& mesh, int nverts, std::vector<std::vector<int>>& vertNeiEdges, std::vector<std::vector<int>>& vertNeiFaces)
-{
-    vertNeiEdges.resize(nverts);
-    vertNeiFaces.resize(nverts);
-
-    int nfaces = mesh.nFaces();
-    int nedges = mesh.nEdges();
-
-    for(int i = 0; i < nfaces; i++)
-    {
-        for(int j = 0; j < 3; j++)
-        {
-            vertNeiFaces[mesh.faceVertex(i, j)].push_back(i);
-        }
-    }
-
-    for(int i = 0; i < nedges; i++)
-    {
-        for(int j = 0; j < 2; j++)
-        {
-            vertNeiEdges[mesh.edgeVertex(i, j)].push_back(i);
-        }
-    }
-
-}
-
-
-Eigen::SparseMatrix<double> buildD0(const MeshConnectivity& mesh, int nverts)
-{
-    int nedges = mesh.nEdges();
-
-    std::vector<Eigen::Triplet<double>> T;
-
-    for(int i = 0; i < nedges; i++)
-    {
-        T.push_back(Eigen::Triplet<double>(i, mesh.edgeVertex(i, 1), 1));
-        T.push_back(Eigen::Triplet<double>(i, mesh.edgeVertex(i, 0), -1));
-    }
-
-    Eigen::SparseMatrix<double> M;
-    M.resize(nedges, nverts);
-    M.setFromTriplets(T.begin(), T.end());
-    return M;
-}
-
 void mkdir(const std::string& foldername)
 {
     if (!std::filesystem::exists(foldername))
@@ -809,24 +453,29 @@ void mkdir(const std::string& foldername)
     }
 }
 
-Eigen::VectorXd getFaceArea(const Eigen::MatrixXd& V, const MeshConnectivity& mesh)
+Eigen::VectorXd getFaceArea(const Mesh& mesh)
 {
 	Eigen::VectorXd faceArea;
-	igl::doublearea(V, mesh.faces(), faceArea);
+    Eigen::MatrixXd V;
+    Eigen::MatrixXi F;
+    mesh.GetPos(V);
+    mesh.GetFace(F);
+
+	igl::doublearea(V, F, faceArea);
 	faceArea /= 2;
 	return faceArea;
 }
 
-Eigen::VectorXd getEdgeArea(const Eigen::MatrixXd& V, const MeshConnectivity& mesh)
+Eigen::VectorXd getEdgeArea(const Mesh& mesh)
 {
-	Eigen::VectorXd faceArea = getFaceArea(V, mesh);
+	Eigen::VectorXd faceArea = getFaceArea(mesh);
 	Eigen::VectorXd edgeArea;
-	edgeArea.setZero(mesh.nEdges());
+	edgeArea.setZero(mesh.GetEdgeCount());
 
-	for (int i = 0; i < mesh.nEdges(); i++)
+	for (int i = 0; i < mesh.GetEdgeCount(); i++)
 	{
-		int f0 = mesh.edgeFace(i, 0);
-		int f1 = mesh.edgeFace(i, 1);
+		int f0 = mesh.GetEdgeFaces(i)[0];
+		int f1 = mesh.GetEdgeFaces(i)[1];
 
 		if (f0 != -1 && f1 != -1)
 			edgeArea(i) = (faceArea(f0) + faceArea(f1)) / 2.;
@@ -839,216 +488,29 @@ Eigen::VectorXd getEdgeArea(const Eigen::MatrixXd& V, const MeshConnectivity& me
 }
 
 
-Eigen::VectorXd getVertArea(const Eigen::MatrixXd& V, const MeshConnectivity& mesh)
+Eigen::VectorXd getVertArea(const Mesh& mesh)
 {
-	Eigen::VectorXd faceArea = getFaceArea(V, mesh);
+	Eigen::VectorXd faceArea = getFaceArea(mesh);
 	Eigen::VectorXd vertArea;
-	vertArea.setZero(V.rows());
+	vertArea.setZero(mesh.GetVertCount());
 
-	for (int i = 0; i < mesh.nFaces(); i++)
+	for (int i = 0; i < mesh.GetFaceCount(); i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			int vid = mesh.faceVertex(i, j);
+			int vid = mesh.GetFaceVerts(i)[j];
 			vertArea(vid) += faceArea(i) / 3.;
 		}
 	}
-
 	return vertArea;
 }
 
-void laplacianSmoothing(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, Eigen::MatrixXd& newV, double smoothingRatio, int opTimes, bool isFixBnd)
-{
-    newV = V;
-    if(opTimes == 0)
-        return;
 
-    Eigen::SparseMatrix<double> L;
-    igl::cotmatrix(V, F, L);
-
-    Eigen::VectorXd sum;
-    sum.setZero(V.rows());
-
-    for (int k=0; k<L.outerSize(); ++k)
-        for (Eigen::SparseMatrix<double>::InnerIterator it(L,k); it; ++it)
-        {
-            if(it.row() == it.col())
-                sum(it.row()) = it.value();
-        }
-
-    std::vector<Eigen::Triplet<double>> T;
-
-    for (int k=0; k<L.outerSize(); ++k)
-        for (Eigen::SparseMatrix<double>::InnerIterator it(L,k); it; ++it)
-        {
-            if(sum(it.row()) != 0)
-                T.push_back(Eigen::Triplet<double>(it.row(), it.col(), it.value() / sum(it.row())));
-            else
-                T.push_back(Eigen::Triplet<double>(it.row(), it.col(), it.value() / (1e-6 + sum(it.row()))));
-        }
-
-    L.setFromTriplets(T.begin(), T.end());      // normalized laplacian
-    Eigen::SparseMatrix<double> idmat(V.rows(), V.rows());
-    idmat.setIdentity();
-
-    Eigen::SparseMatrix<double> smoothL = idmat - smoothingRatio * L;
-
-    std::vector<int> bnd;
-    if(isFixBnd)
-		igl::boundary_loop(F, bnd);
-
-    for(int i = 0; i < opTimes; i++)
-    {
-        for(int j = 0; j < 3; j++)
-            newV.col(j) = smoothL * newV.col(j);
-
-		if (isFixBnd)
-		{
-			for (int j = 0; j < bnd.size(); j++)
-				newV.row(bnd[j]) = V.row(bnd[j]);
-		}
-       
-    }
-
-
-}
-
-void laplacianSmoothing(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::VectorXd& oldData, Eigen::VectorXd& newData, double smoothingRatio, int opTimes, bool isFixBnd)
-{
-	newData = oldData;
-	if (opTimes == 0)
-		return;
-
-	Eigen::SparseMatrix<double> L;
-	igl::cotmatrix(V, F, L);
-
-	Eigen::VectorXd sum;
-	sum.setZero(V.rows());
-
-	for (int k = 0; k < L.outerSize(); ++k)
-		for (Eigen::SparseMatrix<double>::InnerIterator it(L, k); it; ++it)
-		{
-			if (it.row() == it.col())
-				sum(it.row()) = it.value();
-		}
-
-	std::vector<Eigen::Triplet<double>> T;
-
-	for (int k = 0; k < L.outerSize(); ++k)
-		for (Eigen::SparseMatrix<double>::InnerIterator it(L, k); it; ++it)
-		{
-			if (sum(it.row()) != 0)
-				T.push_back(Eigen::Triplet<double>(it.row(), it.col(), it.value() / sum(it.row())));
-			else
-				T.push_back(Eigen::Triplet<double>(it.row(), it.col(), it.value() / (1e-6 + sum(it.row()))));
-		}
-
-	L.setFromTriplets(T.begin(), T.end());      // normalized laplacian
-	Eigen::SparseMatrix<double> idmat(V.rows(), V.rows());
-	idmat.setIdentity();
-
-	Eigen::SparseMatrix<double> smoothL = idmat - smoothingRatio * L;
-
-    std::vector<int> bnd;
-    if(isFixBnd)
-        igl::boundary_loop(F, bnd);
-
-	for (int i = 0; i < opTimes; i++)
-	{
-		newData = smoothL * newData;
-
-        if (isFixBnd)
-        {
-            for (int j = 0; j < bnd.size(); j++)
-                newData(bnd[j]) = oldData(bnd[j]);
-        }
-	}
-}
-
-void curvedPNTriangleUpsampling(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const Eigen::MatrixXd& VN, const std::vector<std::pair<int, Eigen::Vector3d>>& baryList, Eigen::MatrixXd& NV, Eigen::MatrixXd& newVN)
-{
-	int nupverts = baryList.size();
-	NV.setZero(nupverts, 3);
-	newVN.setZero(nupverts, 3);
-
-	for (int i = 0; i < nupverts; i++)
-	{
-		int fid = baryList[i].first;
-
-		double w = baryList[i].second(0);
-		double u = baryList[i].second(1);
-		double v = baryList[i].second(2);
-
-		Eigen::Vector3d P1 = V.row(F(fid, 0));
-		Eigen::Vector3d P2 = V.row(F(fid, 1));
-		Eigen::Vector3d P3 = V.row(F(fid, 2));
-
-		Eigen::Vector3d N1 = VN.row(F(fid, 0));
-		Eigen::Vector3d N2 = VN.row(F(fid, 1));
-		Eigen::Vector3d N3 = VN.row(F(fid, 2));
-
-		N1 = N1 / N1.norm();
-		N2 = N2 / N2.norm();
-		N3 = N3 / N3.norm();
-
-		Eigen::Vector3d b300 = P1;
-		Eigen::Vector3d b030 = P2;
-		Eigen::Vector3d b003 = P3;
-
-		double w12 = (P2 - P1).dot(N1);
-		double w21 = (P1 - P2).dot(N2);
-		double w23 = (P3 - P2).dot(N2);
-		double w32 = (P2 - P3).dot(N3);
-		double w31 = (P1 - P3).dot(N3);
-		double w13 = (P3 - P1).dot(N1);
-
-		Eigen::Vector3d b210 = (2 * P1 + P2 - w12 * N1) / 3;
-		Eigen::Vector3d b120 = (2 * P2 + P1 - w21 * N2) / 3;
-		Eigen::Vector3d b021 = (2 * P2 + P3 - w23 * N2) / 3;
-		Eigen::Vector3d b012 = (2 * P3 + P2 - w32 * N3) / 3;
-		Eigen::Vector3d b102 = (2 * P3 + P1 - w31 * N3) / 3;
-		Eigen::Vector3d b201 = (2 * P1 + P3 - w12 * N1) / 3;
-
-		Eigen::Vector3d Ep = (b210 + b120 + b021 + b012 + b102 + b201) / 6;
-		Eigen::Vector3d Vp = (P1 + P2 + P3) / 3;
-		Eigen::Vector3d b111 = Ep + (Ep - Vp) / 2;
-
-		NV.row(i) = b300 * w * w * w + b030 * u * u * u + b003 * v * v * v
-			+ b210 * 3 * w * w * u + b120 * 3 * w * u * u + b201 * 3 * w * w * v
-			+ b021 * 3 * u * u * v + b102 * 3 * w * v * v + b012 * 3 * u * v * v
-			+ b111 * 6 * w * u * v;
-
-		Eigen::Vector3d n200 = N1;
-		Eigen::Vector3d n020 = N2;
-		Eigen::Vector3d n002 = N3;
-
-		double v12 = 2 * (P2 - P1).dot(N1 + N2) / (P2 - P1).dot(P2 - P1);
-		double v23 = 2 * (P3 - P2).dot(N2 + N3) / (P3 - P2).dot(P3 - P2);
-		double v31 = 2 * (P1 - P3).dot(N3 + N1) / (P1 - P3).dot(P1 - P3);
-
-		Eigen::Vector3d n110 = N1 + N2 - v12 * (P2 - P1);
-		Eigen::Vector3d n011 = N2 + N3 - v23 * (P3 - P2);
-		Eigen::Vector3d n101 = N3 + N1 - v31 * (P1 - P3);
-
-		n110 = n110 / n110.norm();
-		n011 = n011 / n011.norm();
-		n101 = n101 / n101.norm();
-
-		newVN.row(i) = n200 * w * w + n020 * u * u + n002 * v * v + n110 * w * u + n011 * u * v + n101 * w * v;
-	}
-}
-
-void getWrinkledMesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::vector<std::complex<double>>& zvals, std::vector<std::vector<int>>* vertNeiFaces, Eigen::MatrixXd& wrinkledV, double scaleRatio, bool isTangentCorrection)
+void getWrinkledMesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::vector<std::complex<double>>& zvals, Eigen::MatrixXd& wrinkledV, double scaleRatio, bool isTangentCorrection)
 {
 	int nverts = V.rows();
 	int nfaces = F.rows();
 
-	if(!vertNeiFaces)
-	{ 
-		std::vector<std::vector<int>> vertNeiEdges;
-		buildVertexNeighboringInfo(MeshConnectivity(F), nverts, vertNeiEdges, *vertNeiFaces);
-	}
-	
 	wrinkledV = V;
 	Eigen::MatrixXd VN;
 	igl::per_vertex_normals(V, F, VN);
@@ -1058,37 +520,44 @@ void getWrinkledMesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const s
 		wrinkledV.row(vid) += scaleRatio * (zvals[vid].real() * VN.row(vid));
 	}
 
-	for (int i = 0; i < nfaces; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			int vid = F(i, j);
-			Eigen::Matrix2d Ib;
-			Eigen::Matrix<double, 3, 2> drb;
-			drb.col(0) = (V.row(F(i, (j + 1) % 3)) - V.row(F(i, j))).transpose();
-			drb.col(1) = (V.row(F(i, (j + 2) % 3)) - V.row(F(i, j))).transpose();
+    if(isTangentCorrection)
+    {
+        std::vector<std::vector<Eigen::RowVector3d>> tanCorrections(nfaces);
 
-			Ib = drb.transpose() * drb;
-			
-			std::complex<double> dz0 = zvals[F(i, (j + 1) % 3)] - zvals[F(i, j)];
-			std::complex<double> dz1 = zvals[F(i, (j + 2) % 3)] - zvals[F(i, j)];
+        for (int i = 0; i < nfaces; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                int vid = F(i, j);
+                Eigen::Matrix2d Ib;
+                Eigen::Matrix<double, 3, 2> drb;
+                drb.col(0) = (V.row(F(i, (j + 1) % 3)) - V.row(F(i, j))).transpose();
+                drb.col(1) = (V.row(F(i, (j + 2) % 3)) - V.row(F(i, j))).transpose();
 
-			Eigen::Vector2d aSqdtheta;
-			aSqdtheta << (std::conj(zvals[vid]) * dz0).imag(), (std::conj(zvals[vid]) * dz1).imag();
+                Ib = drb.transpose() * drb;
 
-			Eigen::Vector3d extASqdtheta = drb * Ib.inverse() * aSqdtheta;
+                std::complex<double> dz0 = zvals[F(i, (j + 1) % 3)] - zvals[F(i, j)];
+                std::complex<double> dz1 = zvals[F(i, (j + 2) % 3)] - zvals[F(i, j)];
 
-			double theta = std::arg(zvals[vid]);
+                Eigen::Vector2d aSqdtheta;
+                aSqdtheta << (std::conj(zvals[vid]) * dz0).imag(), (std::conj(zvals[vid]) * dz1).imag();
 
-			if (isTangentCorrection)
-			{
-				wrinkledV.row(vid) += scaleRatio / vertNeiFaces->at(vid).size() * (1. / 8 * std::sin(2 * theta) * extASqdtheta);
-			}
+                Eigen::Vector3d extASqdtheta = drb * Ib.inverse() * aSqdtheta;
 
-			
-		}
-	}
+                double theta = std::arg(zvals[vid]);
+                Eigen::RowVector3d correction = scaleRatio * (1. / 8 * std::sin(2 * theta) * extASqdtheta.transpose());
+
+                tanCorrections[vid].push_back(correction);
+
+            }
+        }
+
+        for(int i = 0; i < nverts; i++)
+            for(auto& c : tanCorrections[i])
+                wrinkledV.row(i) += c / tanCorrections[i].size();
+    }
 }
+
 
 void computeBaryGradient(const Eigen::Vector3d& P0, const Eigen::Vector3d& P1, const Eigen::Vector3d& P2, const Eigen::Vector3d& bary, Eigen::Matrix3d& baryGrad)
 {
@@ -1107,28 +576,6 @@ void computeBaryGradient(const Eigen::Vector3d& P0, const Eigen::Vector3d& P1, c
 	baryGrad.row(0) = -dbary12.row(0) - dbary12.row(1);
 	baryGrad.row(1) = dbary12.row(0);
 	baryGrad.row(2) = dbary12.row(1);
-}
-
-
-void saveDphi4Render(const Eigen::MatrixXd& faceOmega, const MeshConnectivity& mesh, const Eigen::MatrixXd& pos, const std::string& filename)
-{
-	int nfaces = mesh.nFaces();
-	std::ofstream dpfs(filename);
-	for (int i = 0; i < nfaces; i++)
-	{
-		Eigen::Vector3d e0 = pos.row(mesh.faceVertex(i, 1)) - pos.row(mesh.faceVertex(i, 0));
-		Eigen::Vector3d e1 = pos.row(mesh.faceVertex(i, 2)) - pos.row(mesh.faceVertex(i, 0));
-
-        Eigen::Vector2d rhs;
-        double u = faceOmega.row(i).dot(e0);
-        double v = faceOmega.row(i).dot(e1);
-        rhs << u, v;
-        Eigen::Matrix2d I;
-        I << e0.dot(e0), e0.dot(e1), e1.dot(e0), e1.dot(e1);
-        rhs = I.inverse() * rhs;
-
-        dpfs << rhs(0) << ",\t" << rhs(1) << ",\t" << 0 << ",\t" << 0 << ",\t" << 0 << ",\t" << 0 << std::endl;
-	}
 }
 
 void saveDphi4Render(const Eigen::MatrixXd& faceOmega, const Mesh& mesh, const std::string& filename)
@@ -1233,4 +680,74 @@ double getZListNorm(const std::vector<std::complex<double>>& zvals)
 		norm += std::norm(zvals[i]);	//squared norm!
 	}
 	return norm > 0 ? std::sqrt(norm) : 0;
+}
+
+std::map<std::pair<int, int>, int> edgeMap(const std::vector< std::vector<int>>& edgeToVert)
+{
+    std::map< std::pair<int, int>, int > heToEdge;
+    for (int i = 0; i < edgeToVert.size(); i++)
+    {
+        std::pair<int, int> he = std::make_pair(edgeToVert[i][0], edgeToVert[i][1]);
+        heToEdge[he] = i;
+    }
+    return heToEdge;
+}
+
+std::map<std::pair<int, int>, int> edgeMap(const Eigen::MatrixXi& faces)
+{
+    std::map< std::pair<int, int>, int > edgeMap;
+    std::vector< std::vector<int> > edgeToVert;
+    for (int face = 0; face < faces.rows(); ++face)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            int vi = faces(face, i);
+            int vj = faces(face, (i + 1) % 3);
+            assert(vi != vj);
+
+            std::pair<int, int> he = std::make_pair(vi, vj);
+            if (he.first > he.second) std::swap(he.first, he.second);
+            if (edgeMap.find(he) != edgeMap.end()) continue;
+
+            edgeMap[he] = edgeToVert.size();
+            edgeToVert.push_back(std::vector<int>(2));
+            edgeToVert.back()[0] = he.first;
+            edgeToVert.back()[1] = he.second;
+        }
+    }
+    return edgeMap;
+}
+
+Eigen::VectorXd swapEdgeVec(const std::vector< std::vector<int>>& edgeToVert, const Eigen::VectorXd& edgeVec, int isInputConsistent)
+{
+    Eigen::VectorXd  edgeVecSwap = edgeVec;
+    std::map< std::pair<int, int>, int > heToEdge = edgeMap(edgeToVert);
+
+    int idx = 0;
+    for (auto it : heToEdge)
+    {
+        if (isInputConsistent == 0)
+            edgeVecSwap(it.second) = edgeVec(idx);
+        else
+            edgeVecSwap(idx) = edgeVec(it.second);
+        idx++;
+    }
+    return edgeVecSwap;
+}
+
+Eigen::VectorXd swapEdgeVec(const Eigen::MatrixXi& faces, const Eigen::VectorXd& edgeVec, int isInputConsistent)
+{
+    Eigen::VectorXd  edgeVecSwap = edgeVec;
+    std::map< std::pair<int, int>, int > heToEdge = edgeMap(faces);
+
+    int idx = 0;
+    for (auto it : heToEdge)
+    {
+        if (isInputConsistent == 0)
+            edgeVecSwap(it.second) = edgeVec(idx);
+        else
+            edgeVecSwap(idx) = edgeVec(it.second);
+        idx++;
+    }
+    return edgeVecSwap;
 }

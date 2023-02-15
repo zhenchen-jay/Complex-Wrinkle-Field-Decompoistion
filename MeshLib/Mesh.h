@@ -68,6 +68,15 @@ public:
     inline void SetVertPos(int vert, const Vector3 &pos) { _points[vert] = pos;  }
 
     inline void GetPos(MatrixX& X) const { ConvertToMatrix (_points, X); }
+    inline void GetFace(Eigen::MatrixXi& F) const
+    {
+        F = Eigen::MatrixXi::Zero(_faceToVert.size(), 3);
+        #pragma omp parallel for
+        for (int i = 0; i < (int) _faceToVert.size(); ++i)
+        {
+            F.row(i) << _faceToVert[i][0], _faceToVert[i][1], _faceToVert[i][2];
+        }
+    }
     inline void SetPos(const MatrixX& X) { ConvertToVector3(X, _points); }
 
     bool HasBoundary() const;
@@ -114,6 +123,11 @@ public:
         const std::vector<Vector3> &points,
         const std::vector< std::vector<int> > &faceToVert,  // sorted CCW
         const std::vector< std::vector<int> > &edgeToVert); // sorted by increasing vert index
+
+        void Populate(
+                const MatrixX &points,
+                const Eigen::MatrixXi &faceToVert
+                );
 
     void Triangulate();
 

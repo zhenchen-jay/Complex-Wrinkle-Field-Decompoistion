@@ -313,6 +313,25 @@ Mesh::Populate(
 }
 
 void
+Mesh::Populate(
+        const MatrixX &points,
+        const Eigen::MatrixXi &faceToVert)
+{
+    std::vector<Vector3> ptVec;
+    std::vector< std::vector<int> > faceVec;
+
+    for(int i = 0; i < points.rows(); i++)
+    {
+        ptVec.push_back(points.row(i).segment<3>(0));
+    }
+
+    for(int i = 0; i < faceToVert.rows(); i++)
+        faceVec.push_back({faceToVert(i, 0), faceToVert(i, 1), faceToVert(i, 2)});
+
+    Populate(ptVec, faceVec);
+}
+
+void
 Mesh::_CheckValidity() const
 {
     for (int vert = 0; vert < _vertToFace.size(); ++vert)
