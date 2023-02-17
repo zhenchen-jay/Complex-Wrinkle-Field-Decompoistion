@@ -265,6 +265,7 @@ void ComplexLoop::CWFSubdivide(const Eigen::VectorXd& omega, const std::vector<s
 
 	MatrixX X;
 	_mesh.GetPos(X);
+    auto _backupMesh = _mesh;
 
 	Eigen::VectorXd amp(nverts);
 	
@@ -303,4 +304,5 @@ void ComplexLoop::CWFSubdivide(const Eigen::VectorXd& omega, const std::vector<s
 
 		upZvals.swap(upZvalsNew);
 	}
+    std::swap(_backupMesh, _mesh);
 }
