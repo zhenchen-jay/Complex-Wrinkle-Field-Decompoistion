@@ -34,20 +34,22 @@
 
 #include <CLI/CLI.hpp>
 
-Eigen::MatrixXd triV, upV, wrinkledV;
+Eigen::MatrixXd triV, upV, wrinkledV, wrinkledV1, compositeWrinkledV;
 Eigen::MatrixXi triF, upF, wrinkledF;
 Mesh baseMesh, upMesh;
 
-Eigen::VectorXd amp, omega;
-Eigen::VectorXd upAmp, upOmega, upPhase;
-std::vector<std::complex<double>> zvals, upZvals;
+Eigen::VectorXd amp, omega, amp1, omega1;
+Eigen::VectorXd upAmp, upOmega, upPhase, upAmp1, upOmega1, upPhase1;
+std::vector<std::complex<double>> zvals, upZvals, zvals1, upZvals1;
 
-Eigen::MatrixXd faceOmega;
-Eigen::MatrixXd upFaceOmega;
+Eigen::MatrixXd faceOmega, faceOmega1;
+Eigen::MatrixXd upFaceOmega, upFaceOmega1;
 
 std::string workingFolder = "";
 int upsampleTimes = 0;
 double wrinkleAmpRatio = 1.0;
+double secFrequencyRatio = 0;
+double secAmpRatio = 0;
 
 std::shared_ptr<BaseLoop> subOp;
 
@@ -56,75 +58,113 @@ bool isFixedBnd = false;
 
 PaintGeometry mPaint;
 
-void updateView(bool isFirstTime = true)
+int updateViewHelper(
+        const Eigen::MatrixXd& basePos, const Eigen::MatrixXi& baseFaces,
+        const Eigen::MatrixXd& upsampledPos, const Eigen::MatrixXi& upsampledFaces, const Eigen::MatrixXd& wrinkledPos,
+        const Eigen::VectorXd& baseAmplitude, const Eigen::MatrixXd& baseFaceOmega,
+        const Eigen::VectorXd& upsampledAmplitude, const Eigen::VectorXd& upsampledPhase, const Eigen::MatrixXd& upsampledFaceOmega,
+        double shiftx, double shifty, int meshId = 0, bool isFirstTime = true)
 {
     int curShift = 0;
-    double shiftx = 1.5 * (triV.col(0).maxCoeff() - triV.col(0).minCoeff());
     if(isFirstTime)
     {
-        polyscope::registerSurfaceMesh("base mesh", triV, triF);
+        polyscope::registerSurfaceMesh("base mesh" + std::to_string(meshId), basePos, baseFaces);
+        polyscope::getSurfaceMesh("base mesh" + std::to_string(meshId))->translate({ curShift * shiftx, shifty, 0 });
     }
 
-    polyscope::getSurfaceMesh("base mesh")->addFaceVectorQuantity("frequency field", vecratio * faceOmega, polyscope::VectorType::AMBIENT);
-
-    Eigen::VectorXd baseAmplitude(zvals.size());
-    for(int i = 0 ; i < zvals.size(); i++)
-    {
-        baseAmplitude(i) = std::abs(zvals[i]);
-    }
-    auto baseAmp = polyscope::getSurfaceMesh("base mesh")->addVertexScalarQuantity("opt amplitude", baseAmplitude);
-    baseAmp->setEnabled(true);
+    polyscope::getSurfaceMesh("base mesh" + std::to_string(meshId))->addFaceVectorQuantity("frequency field", vecratio * baseFaceOmega, polyscope::VectorType::AMBIENT);
+    auto baseAmpPatterns = polyscope::getSurfaceMesh("base mesh" + std::to_string(meshId))->addVertexScalarQuantity("opt amplitude", baseAmplitude);
+    baseAmpPatterns->setEnabled(true);
 
     curShift++;
     // phase pattern
     if(isFirstTime)
     {
-        polyscope::registerSurfaceMesh("phase mesh", upV, upF);
-        polyscope::getSurfaceMesh("phase mesh")->translate({ curShift * shiftx, 0, 0 });
+        polyscope::registerSurfaceMesh("upsampled phase mesh" + std::to_string(meshId), upsampledPos, upsampledFaces);
+        polyscope::getSurfaceMesh("upsampled phase mesh" + std::to_string(meshId))->translate({ curShift * shiftx, shifty, 0 });
     }
 
     mPaint.setNormalization(false);
-    Eigen::MatrixXd phaseColor = mPaint.paintPhi(upPhase);
-    auto phasePatterns = polyscope::getSurfaceMesh("phase mesh")->addVertexColorQuantity("vertex phi", phaseColor);
+    Eigen::MatrixXd phaseColor = mPaint.paintPhi(upsampledPhase);
+    auto phasePatterns = polyscope::getSurfaceMesh("upsampled phase mesh" + std::to_string(meshId))->addVertexColorQuantity("vertex phi", phaseColor);
     phasePatterns->setEnabled(true);
+
+    polyscope::getSurfaceMesh("upsampled phase mesh" + std::to_string(meshId))->addFaceVectorQuantity("subdivided frequency field", vecratio * upsampledFaceOmega, polyscope::VectorType::AMBIENT);
     curShift++;
 
     // amp pattern
     if(isFirstTime)
     {
-        polyscope::registerSurfaceMesh("upsampled ampliude and frequency mesh", upV, upF);
-        polyscope::getSurfaceMesh("upsampled ampliude and frequency mesh")->translate({ curShift * shiftx, 0, 0 });
+        polyscope::registerSurfaceMesh("upsampled ampliude mesh" + std::to_string(meshId), upsampledPos, upsampledFaces);
+        polyscope::getSurfaceMesh("upsampled ampliude mesh" + std::to_string(meshId))->translate({ curShift * shiftx, shifty, 0 });
     }
 
-    auto ampPatterns = polyscope::getSurfaceMesh("upsampled ampliude and frequency mesh")->addVertexScalarQuantity("vertex amplitude", upAmp);
+    auto ampPatterns = polyscope::getSurfaceMesh("upsampled ampliude mesh" + std::to_string(meshId))->addVertexScalarQuantity("vertex amplitude", upsampledAmplitude);
     ampPatterns->setEnabled(true);
-    polyscope::getSurfaceMesh("upsampled ampliude and frequency mesh")->addFaceVectorQuantity("subdivided frequency field", vecratio * upFaceOmega, polyscope::VectorType::AMBIENT);
 
     curShift++;
 
     // wrinkle mesh
     if(isFirstTime)
     {
-        polyscope::registerSurfaceMesh("wrinkled mesh", wrinkledV, upF);
-        polyscope::getSurfaceMesh("wrinkled mesh")->setSurfaceColor({ 80 / 255.0, 122 / 255.0, 91 / 255.0 });
-        polyscope::getSurfaceMesh("wrinkled mesh")->translate({ curShift * shiftx, 0, 0 });
+        polyscope::registerSurfaceMesh("wrinkled mesh" + std::to_string(meshId), wrinkledPos, upsampledFaces);
+        polyscope::getSurfaceMesh("wrinkled mesh" + std::to_string(meshId))->setSurfaceColor({ 80 / 255.0, 122 / 255.0, 91 / 255.0 });
+        polyscope::getSurfaceMesh("wrinkled mesh" + std::to_string(meshId))->translate({ curShift * shiftx, shifty, 0 });
     }
 
     else
-        polyscope::getSurfaceMesh("wrinkled mesh")->updateVertexPositions(wrinkledV);
+        polyscope::getSurfaceMesh("wrinkled mesh" + std::to_string(meshId))->updateVertexPositions(wrinkledPos);
+    return curShift;
+}
+
+void updateView(bool isFirstTime = true)
+{
+    double shiftx = 1.5 * (triV.col(0).maxCoeff() - triV.col(0).minCoeff());
+    double shifty = 1.5 * (triV.col(1).maxCoeff() - triV.col(1).minCoeff());
+
+    int curShift = updateViewHelper(triV, triF, upV, upF, wrinkledV, amp, faceOmega, upAmp, upPhase, upFaceOmega, shiftx, 0, 0, isFirstTime);
+    if(secAmpRatio && secFrequencyRatio)
+    {
+        updateViewHelper(triV, triF, upV, upF, wrinkledV1, amp1, faceOmega1, upAmp1, upPhase1, upFaceOmega1, shiftx, shifty, isFirstTime);
+
+        // wrinkle mesh
+        if(isFirstTime)
+        {
+            polyscope::registerSurfaceMesh("composite wrinkled mesh", compositeWrinkledV, upF);
+            polyscope::getSurfaceMesh("composite wrinkled mesh")->setSurfaceColor({ 80 / 255.0, 122 / 255.0, 91 / 255.0 });
+            polyscope::getSurfaceMesh("composite wrinkled mesh")->translate({ curShift * shiftx, 2 * shifty, 0 });
+        }
+
+        else
+            polyscope::getSurfaceMesh("composite wrinkled mesh")->updateVertexPositions(compositeWrinkledV);
+    }
 }
 
 void subdivideMesh()
 {
+    upsampleTimes = 1;
     subOp->SetMesh(baseMesh);
     subOp->SetBndFixFlag(isFixedBnd);
 
+    Eigen::Vector<std::complex<double>, -1> zvalVec(zvals.size()), upZvalVec;
+    for(int i = 0; i < zvals.size(); i++)
+        zvalVec[i] = zvals[i];
+    Eigen::SparseMatrix<std::complex<double>> A;
+    subOp->BuildComplexS0(omega, A);
+    upZvalVec = A * zvalVec;
+
+    std::vector<std::complex<double>> oldZvals;
+    subOp->updateLoopedZvals(omega, zvals, oldZvals);
+    for(int i = 0; i < upZvalVec.rows(); i++)
+    {
+        std::cout << "new imp: " << upZvalVec[i] << ", old imp: " << oldZvals[i] << std::endl;
+    }
+
+
     upMesh = subOp->meshSubdivide(upsampleTimes);
     subOp->CWFSubdivide(omega, zvals, upOmega, upZvals, upsampleTimes);
-
     upMesh.GetPos(upV);
     upMesh.GetFace(upF);
-
     getWrinkledMesh(upV, upF, upZvals, wrinkledV, wrinkleAmpRatio, false);
     wrinkledF = upF;
 
@@ -138,6 +178,45 @@ void subdivideMesh()
     {
         upAmp[i] = std::abs(upZvals[i]);
         upPhase[i] = std::arg(upZvals[i]);
+    }
+    std::cout << "first wave compute done!" << std::endl;
+
+    if(secFrequencyRatio && secAmpRatio)
+    {
+        omega1 = secFrequencyRatio * omega;
+        amp1 = secAmpRatio * amp;
+
+        Eigen::VectorXd edgeArea, vertArea;
+        edgeArea = getEdgeArea(baseMesh);
+        vertArea = getVertArea(baseMesh);
+        roundZvalsFromEdgeOmegaVertexMag(baseMesh, omega1, amp1, edgeArea, vertArea, amp1.rows(), zvals1);
+
+        subOp->CWFSubdivide(omega1, zvals1, upOmega1, upZvals1, upsampleTimes);
+        std::cout << "second subdivision done" << std::endl;
+
+        Eigen::MatrixXd upN;
+        igl::per_vertex_normals(upV, upF, upN);
+        wrinkledV1 = upV;
+        compositeWrinkledV = upV;
+        for(int i = 0; i < wrinkledV.rows(); i++)
+        {
+            compositeWrinkledV.row(i) = upV.row(i) + upN.row(i) * (upZvals[i].real() + upZvals1[i].real()) * wrinkleAmpRatio;
+            wrinkledV1.row(i) = upV.row(i) + upN.row(i) * (upZvals1[i].real()) * wrinkleAmpRatio;
+        }
+
+        faceOmega1 = intrinsicEdgeVec2FaceVec(omega1, baseMesh);
+        upFaceOmega1 = intrinsicEdgeVec2FaceVec(upOmega1, upMesh);
+
+        upAmp1.setZero(upZvals1.size());
+        upPhase1.setZero(upZvals1.size());
+
+        for(int i = 0; i < upZvals1.size(); i++)
+        {
+            upAmp1[i] = std::abs(upZvals1[i]);
+            upPhase1[i] = std::arg(upZvals1[i]);
+        }
+        std::cout << "secondary wave compute done!" << std::endl;
+
     }
 }
 
@@ -196,6 +275,10 @@ bool loadProblem(std::string loadFileName = "")
         return false;
     }
 
+    // convert old stored edge omega to the current order
+    omega = swapEdgeVec(triF, omega, 0);
+    std::cout << "convert finished, omega size: " << omega.rows() << std::endl;
+
     if (!loadVertexZvals(workingFolder + initZValsPath, triV.rows(), zvals))
     {
         std::cout << "missing init zval file, try to load amp file, and round zvals from amp and omega" << std::endl;
@@ -222,8 +305,10 @@ bool loadProblem(std::string loadFileName = "")
         }
 
     }
+    std::cout << "start to subdivide" << std::endl;
     subOp = std::make_shared<ComplexLoop>();
     subdivideMesh();
+    std::cout << "subdivide done, start to update view" << std::endl;
     updateView();
     return true;
 }
@@ -239,10 +324,20 @@ void callback() {
 	ImGui::SameLine(0, p);
 	if (ImGui::Button("Save", ImVec2((w - p) / 2.f, 0)))
 	{
-		
+        std::string savePath = igl::file_dialog_save();
+        igl::writeOBJ(savePath, wrinkledV, wrinkledF);
+
+        if(secFrequencyRatio && secAmpRatio)
+        {
+            savePath = igl::file_dialog_save();
+            igl::writeOBJ(savePath, wrinkledV1, wrinkledF);
+
+            savePath = igl::file_dialog_save();
+            igl::writeOBJ(savePath, compositeWrinkledV, wrinkledF);
+        }
+
 	}
-    ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
-    if (ImGui::BeginTabBar("Wrinkle Mesh Upsampling Options", tab_bar_flags))
+    if (ImGui::CollapsingHeader("Wrinkle Mesh Upsampling Options", ImGuiTreeNodeFlags_DefaultOpen))
     {
         if (ImGui::InputInt("upsampled level", &upsampleTimes))
         {
@@ -257,6 +352,26 @@ void callback() {
             subdivideMesh();
             updateView(true);
         }
+    }
+
+    if (ImGui::CollapsingHeader("Second wave options", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if(ImGui::InputDouble("frequency ratio", &secFrequencyRatio))
+        {
+            if(secFrequencyRatio < 0)
+                secFrequencyRatio = 0;
+        }
+        if(ImGui::InputDouble("Amplitude ratio", &secAmpRatio))
+        {
+            if(secAmpRatio < 0)
+                secAmpRatio = 0;
+        }
+        if (ImGui::Button("wrinkles on wrinkles"))
+        {
+            subdivideMesh();
+            updateView();
+        }
+
     }
 
     if (ImGui::CollapsingHeader("Visualization Options", ImGuiTreeNodeFlags_DefaultOpen))
@@ -291,7 +406,6 @@ int main(int argc, char** argv)
 	catch (const CLI::ParseError& e) {
 		return app.exit(e);
 	}
-    loadProblem(inputFile);
 
 	// Options
 	polyscope::options::autocenterStructures = true;
@@ -300,6 +414,7 @@ int main(int argc, char** argv)
 
 	// Initialize polyscope
 	polyscope::init();
+    loadProblem(inputFile);
 
 	polyscope::view::upDir = polyscope::view::UpDir::ZUp;
 
@@ -307,11 +422,9 @@ int main(int argc, char** argv)
 	polyscope::state::userCallback = callback;
 
 	polyscope::options::groundPlaneHeightFactor = 0.25; // adjust the plane height
-
 	
 	// Show the gui
 	polyscope::show();
-
 
 	return 0;
 }
