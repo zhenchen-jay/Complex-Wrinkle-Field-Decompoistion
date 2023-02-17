@@ -9,10 +9,12 @@ project(CWFDecompositionGui)
 # Create an executable
 file(GLOB SRCFILES  
     ../../Upsampling/*.h
+    ../../Decomposition/*.h
     ../../MeshLib/*.h
     ../../*.h
     ../../*.hpp
     *.h
+    ../../Decomposition/*.cpp
     ../../Upsampling/*.cpp
     ../../MeshLib/*.cpp
     ../../*.cpp
