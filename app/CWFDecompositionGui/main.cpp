@@ -253,9 +253,12 @@ bool loadProblem(std::string loadFileName = "")
 		}
 	}
 
-	refAmp = amp;
-	refOmega = omega;
+	refAmp = amp * 2;
+	refOmega = omega / 2;
 	refZvals = zvals;
+
+    for(auto& z : refZvals)
+        z *= 2.0;
 
 	std::cout << "start to subdivide" << std::endl;
 	subdivideMesh(true);		// reference mesh
@@ -312,10 +315,10 @@ void callback() {
 	}
 	if (ImGui::Button("CWF Projection", ImVec2(-1, 0)))
 	{
-		Mesh wrinkledMesh = refUpMesh;
-		wrinkledMesh.SetPos(wrinkledV);
+		Mesh refWrinkledMesh = refUpMesh;
+        refWrinkledMesh.SetPos(refWrinkledV);
 
-		CWFDecomposition decompModel(wrinkledMesh);
+		CWFDecomposition decompModel(refWrinkledMesh);
 		std::vector<std::complex<double>> unitZvals;
 		normalizeZvals(zvals, unitZvals, amp);
 		decompModel.intialization(baseMesh, unitZvals, amp, omega, upsampleTimes);

@@ -39,6 +39,6 @@
         "edge_ratio": 1000.0,
         "knoppel_ratio": 1000.0
     },
-    "upsampled_times": 2,
+    "upsampled_times": 1,
     "wrinkle_amp_ratio": 1
 }

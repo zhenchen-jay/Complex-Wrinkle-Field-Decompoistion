@@ -1,5 +1,7 @@
 #include "CWFDecomposition.h"
+#include "../LoadSaveIO.h"
 #include <igl/per_vertex_normals.h>
+
 void CWFDecomposition::intialization(const Mesh &baseMesh, const std::vector<std::complex<double>> &unitZvals,
 									 const Eigen::VectorXd &amp, const Eigen::VectorXd &omega, int upsampleTimes)
 {
@@ -158,7 +160,7 @@ void CWFDecomposition::optimizeCWF()
 	convertCWF2Variables(x0);
 
 	int iter = 0;
-	for(; iter < 1000; iter++)
+	for(; iter < 10000; iter++)
 	{
 		// gradient descent
 		Eigen::VectorXd grad;
@@ -166,7 +168,7 @@ void CWFDecomposition::optimizeCWF()
 
 		if (grad.norm() < 1e-6)
 		{
-			std::cout << "small gradient norm: " << grad.norm() << std::endl;
+			std::cout << "small gradient norm: " << grad.norm() << ", current energy: " << f0 << std::endl;
 			break;
 		}
 		
@@ -179,7 +181,7 @@ void CWFDecomposition::optimizeCWF()
 		while (alpha > 1e-6)
 		{
 			x1 = x0 - alpha * grad;
-			double f1 = computeDifferenceEnergy(x1, NULL, NULL);
+			f1 = computeDifferenceEnergy(x1, NULL, NULL);
 			if (f1 < f0)
 			{
 				energyDecrease = true;
@@ -194,6 +196,8 @@ void CWFDecomposition::optimizeCWF()
 		}
 		else
 		{
+            std::cout << "iter: " << iter << ", f0: " << f0 << ", f1: " << f1 << ", line search rate: " << alpha << std::endl;
+            std::cout << "var update: " << (x1 - x0).norm() << ", fval update: " << f0 - f1 << ", grad norm: " << grad.norm() << std::endl;
 			if (f0 - f1 < 1e-10)
 			{
 				std::cout << "small energy update: " << f0 - f1 << std::endl;
@@ -204,13 +208,26 @@ void CWFDecomposition::optimizeCWF()
 				std::cout << "small position update: " << (x1 - x0).norm() << std::endl;
 				break;
 			}
-			std::cout << "iter: " << iter << ", f0: " << f0 << ", f1: " << f1 << ", line search rate: " << alpha << std::endl;
-			std::cout << "var update: " << (x1 - x0).norm() << ", fval update: " << f0 - f1 << ", grad norm: " << grad.norm() << std::endl;
 			std::swap(x0, x1);
+
+            if(iter % 20 == 0)
+            {
+                convertVariables2CWF(x0);
+                std::vector<std::complex<double>> zvals;
+                Eigen::VectorXd omega;
+                Eigen::MatrixXi baseF;
+                _baseMesh.GetFace(baseF);
+                omega = swapEdgeVec(baseF, _omega, 1);
+                rescaleZvals(_unitZvals, _amp, zvals);
+                saveVertexAmp("tmpAmp_" + std::to_string(iter / 100) + ".txt", _amp);
+                saveEdgeOmega("tmpOmega_" + std::to_string(iter / 100) + ".txt", omega);
+                saveVertexZvals("tmpUnitZval_" + std::to_string(iter / 100) + ".txt", _unitZvals);
+                saveVertexZvals("tmpZval_" + std::to_string(iter / 100) + ".txt", zvals);
+            }
 		}
 	}
 
-	if (iter >= 1000)
+	if (iter >= 10000)
 	{
 		std::cout << "reach the maximum iterations: " << iter << std::endl;
 	}
