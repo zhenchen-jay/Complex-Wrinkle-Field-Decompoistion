@@ -682,6 +682,34 @@ double getZListNorm(const std::vector<std::complex<double>>& zvals)
 	return norm > 0 ? std::sqrt(norm) : 0;
 }
 
+void normalizeZvals(const std::vector<std::complex<double>>& zvals, std::vector<std::complex<double>>& normalizedZvals, Eigen::VectorXd& norm)
+{
+	int size = zvals.size();
+	if (!size)
+		return;
+	normalizedZvals = zvals;
+	norm.setZero(size);
+	for (int i = 0; i < size; i++)
+	{
+		norm[i] = std::abs(zvals[i]);
+		normalizedZvals[i] = norm[i] ? zvals[i] / norm[i] : zvals[i];
+	}
+}
+
+void rescaleZvals(const std::vector<std::complex<double>>& normalizedZvals, const Eigen::VectorXd& norm, std::vector<std::complex<double>>& zvals)
+{
+	int size = normalizedZvals.size();
+	if (!size || norm.rows() != size)
+		return;
+	zvals = normalizedZvals;
+
+	for (int i = 0; i < size; i++)
+	{
+		zvals[i] = norm[i] * normalizedZvals[i];
+	}
+
+}
+
 std::map<std::pair<int, int>, int> edgeMap(const std::vector< std::vector<int>>& edgeToVert)
 {
     std::map< std::pair<int, int>, int > heToEdge;

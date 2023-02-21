@@ -38,6 +38,8 @@ void computeBaryGradient(const Eigen::Vector3d& P0, const Eigen::Vector3d& P1, c
 void mkdir(const std::string& foldername);
 Eigen::VectorXd inconsistencyComputation(const Mesh& mesh, const Eigen::VectorXd& edgeW, const std::vector<std::complex<double>>& zval);
 double getZListNorm(const std::vector<std::complex<double>>& zvals);
+void normalizeZvals(const std::vector<std::complex<double>>& zvals, std::vector<std::complex<double>>& normalizedZvals, Eigen::VectorXd& norm);
+void rescaleZvals(const std::vector<std::complex<double>>& normalizedZvals, const Eigen::VectorXd& norm, std::vector<std::complex<double>>& zvals);
 
 // convert to sorted edge omega, where we sort omega by edge's first vertex id
 std::map<std::pair<int, int>, int> edgeMap(const std::vector< std::vector<int>>& edgeToVert);

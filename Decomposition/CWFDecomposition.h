@@ -7,7 +7,10 @@ class CWFDecomposition
 {
 public:
     CWFDecomposition(){}
-    CWFDecomposition(const Mesh& wrinkledMesh) : _wrinkledMesh(wrinkledMesh) {};
+    CWFDecomposition(const Mesh& wrinkledMesh) 
+    {
+        setWrinkledMesh(wrinkledMesh);
+    }
 
     void setWrinkledMesh(const Mesh& wrinkledMesh)
     {
@@ -25,6 +28,9 @@ public:
 private:
     void convertCWF2Variables(Eigen::VectorXd& x);
     void convertVariables2CWF(const Eigen::VectorXd& x);
+
+    void convertCWF2Variables(const std::vector<std::complex<double>>& unitZvals, const Eigen::VectorXd& amp, const Eigen::VectorXd& omega, Eigen::VectorXd& x);
+    void convertVariables2CWF(const Eigen::VectorXd& x, std::vector<std::complex<double>>& unitZvals, Eigen::VectorXd& amp, Eigen::VectorXd& omega);
 
 
 private:
