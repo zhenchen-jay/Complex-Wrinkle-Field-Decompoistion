@@ -142,12 +142,27 @@ void updateView(bool isFirstTime = true)
 
 void subdivideMesh()
 {
+    upsampleTimes = 1;
     subOp->SetMesh(baseMesh);
     subOp->SetBndFixFlag(isFixedBnd);
 
+    Eigen::Vector<std::complex<double>, -1> zvalVec(zvals.size()), upZvalVec;
+    for(int i = 0; i < zvals.size(); i++)
+        zvalVec[i] = zvals[i];
+    Eigen::SparseMatrix<std::complex<double>> A;
+    subOp->BuildComplexS0(omega, A);
+    upZvalVec = A * zvalVec;
+
+    std::vector<std::complex<double>> oldZvals;
+    subOp->updateLoopedZvals(omega, zvals, oldZvals);
+    for(int i = 0; i < upZvalVec.rows(); i++)
+    {
+        std::cout << "new imp: " << upZvalVec[i] << ", old imp: " << oldZvals[i] << std::endl;
+    }
+
+
     upMesh = subOp->meshSubdivide(upsampleTimes);
     subOp->CWFSubdivide(omega, zvals, upOmega, upZvals, upsampleTimes);
-
     upMesh.GetPos(upV);
     upMesh.GetFace(upF);
     getWrinkledMesh(upV, upF, upZvals, wrinkledV, wrinkleAmpRatio, false);
@@ -309,6 +324,17 @@ void callback() {
 	ImGui::SameLine(0, p);
 	if (ImGui::Button("Save", ImVec2((w - p) / 2.f, 0)))
 	{
+        std::string savePath = igl::file_dialog_save();
+        igl::writeOBJ(savePath, wrinkledV, wrinkledF);
+
+        if(secFrequencyRatio && secAmpRatio)
+        {
+            savePath = igl::file_dialog_save();
+            igl::writeOBJ(savePath, wrinkledV1, wrinkledF);
+
+            savePath = igl::file_dialog_save();
+            igl::writeOBJ(savePath, compositeWrinkledV, wrinkledF);
+        }
 
 	}
     if (ImGui::CollapsingHeader("Wrinkle Mesh Upsampling Options", ImGuiTreeNodeFlags_DefaultOpen))
