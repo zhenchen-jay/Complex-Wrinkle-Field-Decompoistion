@@ -142,24 +142,9 @@ void updateView(bool isFirstTime = true)
 
 void subdivideMesh()
 {
-    upsampleTimes = 1;
+    //upsampleTimes = 1;
     subOp->SetMesh(baseMesh);
     subOp->SetBndFixFlag(isFixedBnd);
-
-    Eigen::Vector<std::complex<double>, -1> zvalVec(zvals.size()), upZvalVec;
-    for(int i = 0; i < zvals.size(); i++)
-        zvalVec[i] = zvals[i];
-    Eigen::SparseMatrix<std::complex<double>> A;
-    subOp->BuildComplexS0(omega, A);
-    upZvalVec = A * zvalVec;
-
-    std::vector<std::complex<double>> oldZvals;
-    subOp->updateLoopedZvals(omega, zvals, oldZvals);
-    for(int i = 0; i < upZvalVec.rows(); i++)
-    {
-        std::cout << "new imp: " << upZvalVec[i] << ", old imp: " << oldZvals[i] << std::endl;
-    }
-
 
     upMesh = subOp->meshSubdivide(upsampleTimes);
     subOp->CWFSubdivide(omega, zvals, upOmega, upZvals, upsampleTimes);

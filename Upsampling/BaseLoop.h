@@ -19,8 +19,7 @@ public:
 	void BuildS0(SparseMatrixX& A) const;
 	void BuildS1(SparseMatrixX& A) const;
     void virtual BuildComplexS0(const Eigen::VectorXd& omega,  Eigen::SparseMatrix<std::complex<double>>& A) = 0;
-    void virtual updateLoopedZvals(const Eigen::VectorXd& omega, const std::vector<std::complex<double>>& zvals, std::vector<std::complex<double>>& upZvals) = 0;
-
+   
 	void GetSubdividedEdges(std::vector< std::vector<int> >& edgeToVert) const;
 	void GetSubdividedFaces(std::vector< std::vector<int> >& faceToVert);
 
