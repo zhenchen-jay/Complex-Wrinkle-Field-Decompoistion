@@ -1,5 +1,6 @@
 #pragma once
 #include "../MeshLib/Mesh.h"
+#include "../CWFTypes.h"
 
 class BaseLoop	// We modify the Loop.h
 {
@@ -18,7 +19,7 @@ public:
 
 	void BuildS0(SparseMatrixX& A) const;
 	void BuildS1(SparseMatrixX& A) const;
-    void virtual BuildComplexS0(const Eigen::VectorXd& omega,  Eigen::SparseMatrix<std::complex<double>>& A) = 0;
+    void virtual BuildComplexS0(const VectorX& omega, ComplexSparseMatrixX& A) = 0;
    
 	void GetSubdividedEdges(std::vector< std::vector<int> >& edgeToVert) const;
 	void GetSubdividedFaces(std::vector< std::vector<int> >& faceToVert);
@@ -26,7 +27,14 @@ public:
 	bool IsVertRegular(int vert) const;
 	bool AreIrregularVertsIsolated() const;
 
-	void virtual CWFSubdivide(const Eigen::VectorXd& omega, const std::vector<std::complex<double>>& zvals, Eigen::VectorXd& omegaNew, std::vector<std::complex<double>>& upZvals, int level) = 0;
+	void virtual CWFSubdivide(
+		const CWF& cwf,								// input CWF
+		CWF &upcwf,									// output CWF
+		int level, 
+		SparseMatrixX* upS0 = NULL,					// upsampled matrix for scalar
+		SparseMatrixX* upS1 = NULL,					// upsampled matrix for one form
+		ComplexSparseMatrixX* upComplexS0 = NULL	// upsampled matrix for complex scalar
+	) = 0;
     Mesh meshSubdivide(int level);
 
 protected:

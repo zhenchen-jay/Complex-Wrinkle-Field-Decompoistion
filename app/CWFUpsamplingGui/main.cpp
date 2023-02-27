@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "../../MeshLib/Mesh.h"
+#include "../../CWFTypes.h"
 #include "../../json.hpp"
 #include "../../CommonTools.h"
 #include "../../LoadSaveIO.h"
@@ -34,16 +35,18 @@
 
 #include <CLI/CLI.hpp>
 
-Eigen::MatrixXd triV, upV, wrinkledV, wrinkledV1, compositeWrinkledV;
+MatrixX triV, upV, wrinkledV, wrinkledV1, compositeWrinkledV;
 Eigen::MatrixXi triF, upF, wrinkledF;
 Mesh baseMesh, upMesh;
 
-Eigen::VectorXd amp, omega, amp1, omega1;
-Eigen::VectorXd upAmp, upOmega, upPhase, upAmp1, upOmega1, upPhase1;
-std::vector<std::complex<double>> zvals, upZvals, zvals1, upZvals1;
+CWF baseCWF, upCWF, baseCWF1, upCWF1;
 
-Eigen::MatrixXd faceOmega, faceOmega1;
-Eigen::MatrixXd upFaceOmega, upFaceOmega1;
+VectorX amp, omega, amp1, omega1;
+VectorX upAmp, upOmega, upPhase, upAmp1, upOmega1, upPhase1;
+ComplexVectorX zvals, upZvals, zvals1, upZvals1;
+
+MatrixX faceOmega, faceOmega1;
+MatrixX upFaceOmega, upFaceOmega1;
 
 std::string workingFolder = "";
 int upsampleTimes = 0;
@@ -59,10 +62,10 @@ bool isFixedBnd = false;
 PaintGeometry mPaint;
 
 int updateViewHelper(
-        const Eigen::MatrixXd& basePos, const Eigen::MatrixXi& baseFaces,
-        const Eigen::MatrixXd& upsampledPos, const Eigen::MatrixXi& upsampledFaces, const Eigen::MatrixXd& wrinkledPos,
-        const Eigen::VectorXd& baseAmplitude, const Eigen::MatrixXd& baseFaceOmega,
-        const Eigen::VectorXd& upsampledAmplitude, const Eigen::VectorXd& upsampledPhase, const Eigen::MatrixXd& upsampledFaceOmega,
+        const MatrixX& basePos, const Eigen::MatrixXi& baseFaces,
+        const MatrixX& upsampledPos, const Eigen::MatrixXi& upsampledFaces, const MatrixX& wrinkledPos,
+        const VectorX& baseAmplitude, const MatrixX& baseFaceOmega,
+        const VectorX& upsampledAmplitude, const VectorX& upsampledPhase, const MatrixX& upsampledFaceOmega,
         double shiftx, double shifty, int meshId = 0, bool isFirstTime = true)
 {
     int curShift = 0;
@@ -85,7 +88,7 @@ int updateViewHelper(
     }
 
     mPaint.setNormalization(false);
-    Eigen::MatrixXd phaseColor = mPaint.paintPhi(upsampledPhase);
+    MatrixX phaseColor = mPaint.paintPhi(upsampledPhase);
     auto phasePatterns = polyscope::getSurfaceMesh("upsampled phase mesh" + std::to_string(meshId))->addVertexColorQuantity("vertex phi", phaseColor);
     phasePatterns->setEnabled(true);
 
@@ -145,13 +148,16 @@ void subdivideMesh()
     //upsampleTimes = 1;
     subOp->SetMesh(baseMesh);
     subOp->SetBndFixFlag(isFixedBnd);
+    subOp->CWFSubdivide(baseCWF, upCWF, upsampleTimes);
 
-    upMesh = subOp->meshSubdivide(upsampleTimes);
-    subOp->CWFSubdivide(omega, zvals, upOmega, upZvals, upsampleTimes);
+    upMesh = upCWF._mesh;
     upMesh.GetPos(upV);
     upMesh.GetFace(upF);
+
+    rescaleZvals(upCWF._zvals, upCWF._amp, upZvals);
     getWrinkledMesh(upV, upF, upZvals, wrinkledV, wrinkleAmpRatio, false);
     wrinkledF = upF;
+    upOmega = upCWF._omega;
 
     faceOmega = intrinsicEdgeVec2FaceVec(omega, baseMesh);
     upFaceOmega = intrinsicEdgeVec2FaceVec(upOmega, upMesh);
@@ -171,15 +177,17 @@ void subdivideMesh()
         omega1 = secFrequencyRatio * omega;
         amp1 = secAmpRatio * amp;
 
-        Eigen::VectorXd edgeArea, vertArea;
+        VectorX edgeArea, vertArea;
         edgeArea = getEdgeArea(baseMesh);
         vertArea = getVertArea(baseMesh);
         roundZvalsFromEdgeOmegaVertexMag(baseMesh, omega1, amp1, edgeArea, vertArea, amp1.rows(), zvals1);
+        baseCWF1 = CWF(amp1, omega1, normalizeZvals(zvals1), baseMesh);
 
-        subOp->CWFSubdivide(omega1, zvals1, upOmega1, upZvals1, upsampleTimes);
+        subOp->CWFSubdivide(baseCWF1, upCWF1, upsampleTimes);
+        rescaleZvals(upCWF1._zvals, upCWF1._amp, upZvals1);
         std::cout << "second subdivision done" << std::endl;
 
-        Eigen::MatrixXd upN;
+        MatrixX upN;
         igl::per_vertex_normals(upV, upF, upN);
         wrinkledV1 = upV;
         compositeWrinkledV = upV;
@@ -188,6 +196,8 @@ void subdivideMesh()
             compositeWrinkledV.row(i) = upV.row(i) + upN.row(i) * (upZvals[i].real() + upZvals1[i].real()) * wrinkleAmpRatio;
             wrinkledV1.row(i) = upV.row(i) + upN.row(i) * (upZvals1[i].real()) * wrinkleAmpRatio;
         }
+
+        upOmega1 = upCWF1._omega;
 
         faceOmega1 = intrinsicEdgeVec2FaceVec(omega1, baseMesh);
         upFaceOmega1 = intrinsicEdgeVec2FaceVec(upOmega1, upMesh);
@@ -275,7 +285,7 @@ bool loadProblem(std::string loadFileName = "")
 
         else
         {
-            Eigen::VectorXd edgeArea, vertArea;
+            VectorX edgeArea, vertArea;
             edgeArea = getEdgeArea(baseMesh);
             vertArea = getVertArea(baseMesh);
             roundZvalsFromEdgeOmegaVertexMag(baseMesh, omega, amp, edgeArea, vertArea, nverts, zvals);
@@ -292,6 +302,8 @@ bool loadProblem(std::string loadFileName = "")
     }
     std::cout << "start to subdivide" << std::endl;
     subOp = std::make_shared<ComplexLoop>();
+    baseCWF = CWF(amp, omega, normalizeZvals(zvals), baseMesh);
+
     subdivideMesh();
     std::cout << "subdivide done, start to update view" << std::endl;
     updateView();

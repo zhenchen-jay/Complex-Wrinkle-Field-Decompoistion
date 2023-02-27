@@ -329,29 +329,29 @@ Eigen::Vector3d computeHatWeight(double u, double v)
 	return weights;
 }
 
-Eigen::MatrixXd SPDProjection(Eigen::MatrixXd A)
+MatrixX SPDProjection(MatrixX A)
 {
-	Eigen::MatrixXd posHess = A;
-	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es;
+	MatrixX posHess = A;
+	Eigen::SelfAdjointEigenSolver<MatrixX> es;
 	es.compute(posHess);
-	Eigen::VectorXd evals = es.eigenvalues();
+	VectorX evals = es.eigenvalues();
 
 	for (int i = 0; i < evals.size(); i++)
 	{
 		if (evals(i) < 0)
 			evals(i) = 0;
 	}
-	Eigen::MatrixXd D = evals.asDiagonal();
-	Eigen::MatrixXd V = es.eigenvectors();
+	MatrixX D = evals.asDiagonal();
+	MatrixX V = es.eigenvectors();
 	posHess = V * D * V.transpose();
 
 	return posHess;
 }
 
-Eigen::VectorXd faceVec2IntrinsicEdgeVec(const Eigen::MatrixXd& v, const Mesh& mesh)
+VectorX faceVec2IntrinsicEdgeVec(const MatrixX& v, const Mesh& mesh)
 {
 	int nedges = mesh.GetEdgeCount();
-	Eigen::VectorXd edgeOmega(nedges);
+	VectorX edgeOmega(nedges);
 
 	for (int i = 0; i < nedges; i++)
 	{
@@ -373,10 +373,10 @@ Eigen::VectorXd faceVec2IntrinsicEdgeVec(const Eigen::MatrixXd& v, const Mesh& m
 	return edgeOmega;
 }
 
-Eigen::VectorXd vertexVec2IntrinsicVec(const Eigen::MatrixXd& v, Mesh& mesh)
+VectorX vertexVec2IntrinsicVec(const MatrixX& v, Mesh& mesh)
 {
 	int nedges = mesh.GetEdgeCount();
-	Eigen::VectorXd edgeOmega(nedges);
+	VectorX edgeOmega(nedges);
 
 	for (int i = 0; i < nedges; i++)
 	{
@@ -389,11 +389,11 @@ Eigen::VectorXd vertexVec2IntrinsicVec(const Eigen::MatrixXd& v, Mesh& mesh)
 	return edgeOmega;
 }
 
-Eigen::MatrixXd intrinsicEdgeVec2FaceVec(const Eigen::VectorXd& w, const Mesh& mesh)
+MatrixX intrinsicEdgeVec2FaceVec(const VectorX& w, const Mesh& mesh)
 {
 	int nfaces = mesh.GetFaceCount();
 
-	Eigen::MatrixXd faceVec = Eigen::MatrixXd::Zero(nfaces, 3);
+	MatrixX faceVec = MatrixX::Zero(nfaces, 3);
 	for (int i = 0; i < nfaces; i++)
     {
 		for (int j = 0; j < 3; j++)
@@ -453,10 +453,10 @@ void mkdir(const std::string& foldername)
     }
 }
 
-Eigen::VectorXd getFaceArea(const Mesh& mesh)
+VectorX getFaceArea(const Mesh& mesh)
 {
-	Eigen::VectorXd faceArea;
-    Eigen::MatrixXd V;
+	VectorX faceArea;
+    MatrixX V;
     Eigen::MatrixXi F;
     mesh.GetPos(V);
     mesh.GetFace(F);
@@ -466,10 +466,10 @@ Eigen::VectorXd getFaceArea(const Mesh& mesh)
 	return faceArea;
 }
 
-Eigen::VectorXd getEdgeArea(const Mesh& mesh)
+VectorX getEdgeArea(const Mesh& mesh)
 {
-	Eigen::VectorXd faceArea = getFaceArea(mesh);
-	Eigen::VectorXd edgeArea;
+	VectorX faceArea = getFaceArea(mesh);
+	VectorX edgeArea;
 	edgeArea.setZero(mesh.GetEdgeCount());
 
 	for (int i = 0; i < mesh.GetEdgeCount(); i++)
@@ -488,10 +488,10 @@ Eigen::VectorXd getEdgeArea(const Mesh& mesh)
 }
 
 
-Eigen::VectorXd getVertArea(const Mesh& mesh)
+VectorX getVertArea(const Mesh& mesh)
 {
-	Eigen::VectorXd faceArea = getFaceArea(mesh);
-	Eigen::VectorXd vertArea;
+	VectorX faceArea = getFaceArea(mesh);
+	VectorX vertArea;
 	vertArea.setZero(mesh.GetVertCount());
 
 	for (int i = 0; i < mesh.GetFaceCount(); i++)
@@ -506,13 +506,13 @@ Eigen::VectorXd getVertArea(const Mesh& mesh)
 }
 
 
-void getWrinkledMesh(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, const std::vector<std::complex<double>>& zvals, Eigen::MatrixXd& wrinkledV, double scaleRatio, bool isTangentCorrection)
+void getWrinkledMesh(const MatrixX& V, const Eigen::MatrixXi& F, const ComplexVectorX& zvals, MatrixX& wrinkledV, double scaleRatio, bool isTangentCorrection)
 {
 	int nverts = V.rows();
 	int nfaces = F.rows();
 
 	wrinkledV = V;
-	Eigen::MatrixXd VN;
+	MatrixX VN;
 	igl::per_vertex_normals(V, F, VN);
 
 	for (int vid = 0; vid < nverts; vid++)
@@ -578,7 +578,7 @@ void computeBaryGradient(const Eigen::Vector3d& P0, const Eigen::Vector3d& P1, c
 	baryGrad.row(2) = dbary12.row(1);
 }
 
-void saveDphi4Render(const Eigen::MatrixXd& faceOmega, const Mesh& mesh, const std::string& filename)
+void saveDphi4Render(const MatrixX& faceOmega, const Mesh& mesh, const std::string& filename)
 {
 	int nfaces = mesh.GetFaceCount();
 	std::ofstream dpfs(filename);
@@ -602,7 +602,7 @@ void saveDphi4Render(const Eigen::MatrixXd& faceOmega, const Mesh& mesh, const s
 	}
 }
 
-void saveAmp4Render(const Eigen::VectorXd& vertAmp, const std::string& filename, double ampMin, double ampMax)
+void saveAmp4Render(const VectorX& vertAmp, const std::string& filename, double ampMin, double ampMax)
 {
 	std::ofstream afs(filename);
     if(ampMin >= ampMax)
@@ -616,7 +616,7 @@ void saveAmp4Render(const Eigen::VectorXd& vertAmp, const std::string& filename,
 }
 
 
-void savePhi4Render(const Eigen::VectorXd& vertPhi, const std::string& fileName)
+void savePhi4Render(const VectorX& vertPhi, const std::string& fileName)
 {
 	std::ofstream pfs(fileName);
 	for(int j = 0; j < vertPhi.rows(); j++)
@@ -635,7 +635,7 @@ void saveFlag4Render(const Eigen::VectorXi& faceFlags, const std::string& filena
     }
 }
 
-void saveSourcePts4Render(const Eigen::VectorXi& vertFlags, const Eigen::MatrixXd& vertVecs, const Eigen::VectorXd& vertAmp, const std::string& flagfilename)
+void saveSourcePts4Render(const Eigen::VectorXi& vertFlags, const MatrixX& vertVecs, const VectorX& vertAmp, const std::string& flagfilename)
 {
     std::ofstream ffs(flagfilename);
 
@@ -646,11 +646,11 @@ void saveSourcePts4Render(const Eigen::VectorXi& vertFlags, const Eigen::MatrixX
 }
 
 
-Eigen::VectorXd inconsistencyComputation(const Mesh& mesh, const Eigen::VectorXd& edgeW, const std::vector<std::complex<double>>& zval)
+VectorX inconsistencyComputation(const Mesh& mesh, const VectorX& edgeW, const ComplexVectorX& zval)
 {
 	int nverts = mesh.GetVertCount();
 	int nfaces = mesh.GetFaceCount();
-	Eigen::VectorXd incons = Eigen::VectorXd::Zero(nverts);
+	VectorX incons = VectorX::Zero(nverts);
 	for(int i = 0; i < nfaces; i++)
 	{
 		for (int j = 0; j < 3; j++)
@@ -669,34 +669,7 @@ Eigen::VectorXd inconsistencyComputation(const Mesh& mesh, const Eigen::VectorXd
 	return incons;
 }
 
-double getZListNorm(const std::vector<std::complex<double>>& zvals)
-{
-	int size = zvals.size();
-	if (!size)
-		return 0;
-	double norm = 0;
-	for (int i = 0; i < size; i++)
-	{
-		norm += std::norm(zvals[i]);	//squared norm!
-	}
-	return norm > 0 ? std::sqrt(norm) : 0;
-}
-
-void normalizeZvals(const std::vector<std::complex<double>>& zvals, std::vector<std::complex<double>>& normalizedZvals, Eigen::VectorXd& norm)
-{
-	int size = zvals.size();
-	if (!size)
-		return;
-	normalizedZvals = zvals;
-	norm.setZero(size);
-	for (int i = 0; i < size; i++)
-	{
-		norm[i] = std::abs(zvals[i]);
-		normalizedZvals[i] = norm[i] ? zvals[i] / norm[i] : zvals[i];
-	}
-}
-
-void rescaleZvals(const std::vector<std::complex<double>>& normalizedZvals, const Eigen::VectorXd& norm, std::vector<std::complex<double>>& zvals)
+void rescaleZvals(const ComplexVectorX& normalizedZvals, const VectorX& norm, ComplexVectorX& zvals)
 {
 	int size = normalizedZvals.size();
 	if (!size || norm.rows() != size)
@@ -708,6 +681,20 @@ void rescaleZvals(const std::vector<std::complex<double>>& normalizedZvals, cons
 		zvals[i] = norm[i] * normalizedZvals[i];
 	}
 
+}
+
+ComplexVectorX normalizeZvals(const ComplexVectorX& zvals)
+{
+	int size = zvals.size();
+	if (!size)
+		return zvals;
+	ComplexVectorX normalizedZvals = zvals;
+
+	for (int i = 0; i < size; i++)
+	{
+		normalizedZvals[i] = std::complex<Scalar>(std::cos(std::arg(zvals[i])), std::sin(std::arg(zvals[i])));
+	}
+	return normalizedZvals;
 }
 
 std::map<std::pair<int, int>, int> edgeMap(const std::vector< std::vector<int>>& edgeToVert)
@@ -746,9 +733,9 @@ std::map<std::pair<int, int>, int> edgeMap(const Eigen::MatrixXi& faces)
     return edgeMap;
 }
 
-Eigen::VectorXd swapEdgeVec(const std::vector< std::vector<int>>& edgeToVert, const Eigen::VectorXd& edgeVec, int isInputConsistent)
+VectorX swapEdgeVec(const std::vector< std::vector<int>>& edgeToVert, const VectorX& edgeVec, int isInputConsistent)
 {
-    Eigen::VectorXd  edgeVecSwap = edgeVec;
+    VectorX  edgeVecSwap = edgeVec;
     std::map< std::pair<int, int>, int > heToEdge = edgeMap(edgeToVert);
 
     int idx = 0;
@@ -763,9 +750,9 @@ Eigen::VectorXd swapEdgeVec(const std::vector< std::vector<int>>& edgeToVert, co
     return edgeVecSwap;
 }
 
-Eigen::VectorXd swapEdgeVec(const Eigen::MatrixXi& faces, const Eigen::VectorXd& edgeVec, int isInputConsistent)
+VectorX swapEdgeVec(const Eigen::MatrixXi& faces, const VectorX& edgeVec, int isInputConsistent)
 {
-    Eigen::VectorXd  edgeVecSwap = edgeVec;
+    VectorX  edgeVecSwap = edgeVec;
     std::map< std::pair<int, int>, int > heToEdge = edgeMap(faces);
 
     int idx = 0;

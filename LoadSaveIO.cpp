@@ -1,7 +1,7 @@
 #include "LoadSaveIO.h"
 #include <iomanip>
 
-bool loadEdgeOmega(const std::string& filename, const int& nlines, Eigen::VectorXd& edgeOmega)
+bool loadEdgeOmega(const std::string& filename, const int& nlines, VectorX& edgeOmega)
 {
 	std::ifstream infile(filename);
 	if (!infile)
@@ -36,7 +36,7 @@ bool loadEdgeOmega(const std::string& filename, const int& nlines, Eigen::Vector
 	return true;
 }
 
-bool loadVertexZvals(const std::string& filePath, const int& nlines, std::vector<std::complex<double>>& zvals)
+bool loadVertexZvals(const std::string& filePath, const int& nlines, ComplexVectorX& zvals)
 {
 	std::ifstream zfs(filePath);
 	if (!zfs)
@@ -54,12 +54,12 @@ bool loadVertexZvals(const std::string& filePath, const int& nlines, std::vector
 		std::string x, y;
 		ss >> x;
 		ss >> y;
-		zvals[j] = std::complex<double>(std::stod(x), std::stod(y));
+		zvals[j] = std::complex<Scalar>(std::stod(x), std::stod(y));
 	}
 	return true;
 }
 
-bool loadVertexAmp(const std::string& filePath, const int& nlines, Eigen::VectorXd& amp)
+bool loadVertexAmp(const std::string& filePath, const int& nlines, VectorX& amp)
 {
 	std::ifstream afs(filePath);
 
@@ -85,7 +85,7 @@ bool loadVertexAmp(const std::string& filePath, const int& nlines, Eigen::Vector
 	return true;
 }
 
-bool saveEdgeOmega(const std::string& filename, const Eigen::VectorXd& edgeOmega)
+bool saveEdgeOmega(const std::string& filename, const VectorX& edgeOmega)
 {
     std::ofstream wfs(filename);
     if(!wfs)
@@ -97,7 +97,7 @@ bool saveEdgeOmega(const std::string& filename, const Eigen::VectorXd& edgeOmega
     return true;
 }
 
-bool saveVertexZvals(const std::string& filePath, const std::vector<std::complex<double>>& zvals)
+bool saveVertexZvals(const std::string& filePath, const ComplexVectorX& zvals)
 {
     std::ofstream zfs(filePath);
     if(!zfs)
@@ -112,7 +112,7 @@ bool saveVertexZvals(const std::string& filePath, const std::vector<std::complex
     return true;
 
 }
-bool saveVertexAmp(const std::string& filePath, const Eigen::VectorXd& amp)
+bool saveVertexAmp(const std::string& filePath, const VectorX& amp)
 {
     std::ofstream  afs(filePath);
     if(!afs)

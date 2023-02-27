@@ -18,29 +18,27 @@ public:
         _wrinkledMesh.GetPos(_wrinkledV);
         _wrinkledMesh.GetFace(_wrinkledF);
     }
-    void intialization(const Mesh& baseMesh, const std::vector<std::complex<double>>& unitZvals, const Eigen::VectorXd& amp, const Eigen::VectorXd& omega, int upsampleTimes);
-    void getCWF(Mesh& baseMesh, std::vector<std::complex<double>>& unitZvals, Eigen::VectorXd& amp, Eigen::VectorXd& omega);
+    void intialization(const CWF& cwf, int upsampleTimes);
+    void getCWF(CWF &baseCWF);
 
     void optimizeCWF();
 
-    double computeDifferenceEnergy(const Eigen::VectorXd& x, Eigen::VectorXd *grad = NULL, Eigen::SparseMatrix<double> *hess = NULL);
+    double computeDifferenceEnergy(const VectorX& x, VectorX *grad = NULL, Eigen::SparseMatrix<double> *hess = NULL);
 
 private:
-    void convertCWF2Variables(Eigen::VectorXd& x);
-    void convertVariables2CWF(const Eigen::VectorXd& x);
+    void convertCWF2Variables(VectorX& x);
+    void convertVariables2CWF(const VectorX& x);
 
-    void convertCWF2Variables(const std::vector<std::complex<double>>& unitZvals, const Eigen::VectorXd& amp, const Eigen::VectorXd& omega, Eigen::VectorXd& x);
-    void convertVariables2CWF(const Eigen::VectorXd& x, std::vector<std::complex<double>>& unitZvals, Eigen::VectorXd& amp, Eigen::VectorXd& omega);
+    void convertCWF2Variables(const CWF& cwf, VectorX& x);
+    void convertVariables2CWF(const VectorX& x, CWF& cwf);
 
 
 private:
-    Mesh _baseMesh, _upMesh;
+    CWF _baseCWF;
+    Mesh _upMesh;
     Eigen::MatrixXd _upV, _upN, _wrinkledV;
     Eigen::MatrixXi _upF, _wrinkledF;
 
-    std::vector<std::complex<double>> _unitZvals;
-    Eigen::VectorXd _amp;
-    Eigen::VectorXd _omega;
     int _upsampleTimes;
 
     std::shared_ptr<BaseLoop> _subOp;       // somehow we may need take the differential in the future (really nasty)

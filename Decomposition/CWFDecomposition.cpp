@@ -2,106 +2,91 @@
 #include "../LoadSaveIO.h"
 #include <igl/per_vertex_normals.h>
 
-void CWFDecomposition::intialization(const Mesh &baseMesh, const std::vector<std::complex<double>> &unitZvals,
-									 const Eigen::VectorXd &amp, const Eigen::VectorXd &omega, int upsampleTimes)
+void CWFDecomposition::intialization(const CWF& cwf, int upsampleTimes)
 {
-	_baseMesh = baseMesh;
-	_unitZvals = unitZvals;
-	_amp = amp;
-	_omega = omega;
+	_baseCWF = cwf;
 	_upsampleTimes = upsampleTimes;
 	_subOp = std::make_shared<ComplexLoop>();
-	_subOp->SetMesh(_baseMesh);
+	_subOp->SetMesh(_baseCWF._mesh);
 	_upMesh = _subOp->meshSubdivide(upsampleTimes);
 	_upMesh.GetPos(_upV);
 	_upMesh.GetFace(_upF);
 	igl::per_vertex_normals(_upV, _upF, _upN);
 }
 
-void CWFDecomposition::getCWF(Mesh &baseMesh, std::vector<std::complex<double>> &unitZvals, Eigen::VectorXd &amp,
-							  Eigen::VectorXd &omega)
+void CWFDecomposition::getCWF(CWF& cwf)
 {
-	baseMesh = _baseMesh;
-	unitZvals = _unitZvals;
-	amp = _amp;
-	omega = _omega;
+	cwf = _baseCWF;
 }
 
-void CWFDecomposition::convertCWF2Variables(const std::vector<std::complex<double>>& unitZvals, const Eigen::VectorXd& amp, const Eigen::VectorXd& omega, Eigen::VectorXd& x)
+void CWFDecomposition::convertCWF2Variables(const CWF& cwf, VectorX& x)
 {
-	int nverts = _baseMesh.GetVertCount();
-	int nedges = _baseMesh.GetEdgeCount();
+	int nverts = _baseCWF._mesh.GetVertCount();
+	int nedges = _baseCWF._mesh.GetEdgeCount();
 
 	x.setZero(3 * nverts + nedges);
 	for (int i = 0; i < nverts; i++)
 	{
-		x[3 * i] = amp[i];
-		x[3 * i + 1] = unitZvals[i].real();
-		x[3 * i + 2] = unitZvals[i].imag();
+		x[3 * i] = cwf._amp[i];
+		x[3 * i + 1] = cwf._zvals[i].real();
+		x[3 * i + 2] = cwf._zvals[i].imag();
 	}
 
 	for (int i = 0; i < nedges; i++)
 	{
-		x[i + 3 * nverts] = omega[i];
+		x[i + 3 * nverts] = cwf._omega[i];
 	}
 }
 
-void CWFDecomposition::convertVariables2CWF(const Eigen::VectorXd& x, std::vector<std::complex<double>>& unitZvals, Eigen::VectorXd& amp, Eigen::VectorXd& omega)
+void CWFDecomposition::convertVariables2CWF(const VectorX& x, CWF& cwf)
 {
-	int nverts = _baseMesh.GetVertCount();
-	int nedges = _baseMesh.GetEdgeCount();
+	int nverts = _baseCWF._mesh.GetVertCount();
+	int nedges = _baseCWF._mesh.GetEdgeCount();
 
-	if (omega.rows() != nedges)
-		omega.setZero(nedges);
-	if (amp.rows() != nverts)
-		amp.setZero(nverts);
-	if (unitZvals.size() != nverts)
-		unitZvals.resize(nverts);
+	if (cwf._omega.rows() != nedges)
+		cwf._omega.setZero(nedges);
+	if (cwf._amp.rows() != nverts)
+		cwf._amp.setZero(nverts);
+	if (cwf._zvals.size() != nverts)
+		cwf._zvals.resize(nverts);
 
 	for (int i = 0; i < nverts; i++)
 	{
-		amp[i] = x[3 * i];
-		unitZvals[i] = std::complex<double>(x[3 * i + 1], x[3 * i + 2]);
+		cwf._amp[i] = x[3 * i];
+		cwf._zvals[i] = std::complex<double>(x[3 * i + 1], x[3 * i + 2]);
 	}
 
 	for (int i = 0; i < nedges; i++)
 	{
-		omega[i] = x[i + 3 * nverts];
+		cwf._omega[i] = x[i + 3 * nverts];
 	}
 }
 
-void CWFDecomposition::convertCWF2Variables(Eigen::VectorXd &x)
+void CWFDecomposition::convertCWF2Variables(VectorX &x)
 {
-	convertCWF2Variables(_unitZvals, _amp, _omega, x);
+	convertCWF2Variables(_baseCWF, x);
 }
 
-void CWFDecomposition::convertVariables2CWF(const Eigen::VectorXd &x)
+void CWFDecomposition::convertVariables2CWF(const VectorX &x)
 {
-	convertVariables2CWF(x, _unitZvals, _amp, _omega);
+	convertVariables2CWF(x, _baseCWF);
 }
 
-double CWFDecomposition::computeDifferenceEnergy(const Eigen::VectorXd &x, Eigen::VectorXd *grad,
-												 Eigen::SparseMatrix<double> *hess)
+double CWFDecomposition::computeDifferenceEnergy(const VectorX &x, VectorX *grad, SparseMatrixX *hess)
 {
-	auto energyComputation = [&](const Eigen::VectorXd& x)
+	auto energyComputation = [&](const VectorX& x)
 	{
-		std::vector<std::complex<double>> zvals, upZvals, unitZvals;
-		Eigen::VectorXd amp, omega;
-		convertVariables2CWF(x, unitZvals, amp, omega);
-
-		rescaleZvals(unitZvals, amp, zvals);
-		Eigen::VectorXd upOmega;
-
 		std::shared_ptr<BaseLoop> subOp;
 		subOp = std::make_shared<ComplexLoop>();
-		subOp->SetMesh(_baseMesh);
-
-		subOp->CWFSubdivide(omega, zvals, upOmega, upZvals, _upsampleTimes);
+		CWF upcwf, basecwf;
+		convertVariables2CWF(x, basecwf);
+		basecwf._mesh = _baseCWF._mesh;
+		subOp->CWFSubdivide(basecwf, upcwf, _upsampleTimes);
 		Eigen::MatrixXd wrinkledPos = _upV;
 		double energy = 0;
 		for(int i = 0; i < _upV.rows(); i++)
 		{
-			wrinkledPos.row(i) += upZvals[i].real() * _upN.row(i);
+			wrinkledPos.row(i) += upcwf._amp[i] * upcwf._zvals[i].real() * _upN.row(i);
 			energy += 0.5 * (wrinkledPos.row(i) - _wrinkledV.row(i)).squaredNorm();
 		}
 		return energy;
@@ -134,20 +119,6 @@ double CWFDecomposition::computeDifferenceEnergy(const Eigen::VectorXd &x, Eigen
 			}
 		);
 
-		//for(int i = 0; i < nvars; i++)
-		//{
-		//	double eps = 1e-6;
-		//	auto x1 = x, x2 = x;
-		//	x1[i] = x[i] + eps;
-		//	x2[i] = x[i] - eps;
-
-		//	double energy1 = energyComputation(x1);
-		//	double energy2 = energyComputation(x2);
-
-		//	double val = (energy1 - energy2) / (2 * eps);   // finite difference
-		//	(*grad)[i] = val;
-		//}
-
 	}
 
 	return energy;
@@ -156,14 +127,14 @@ double CWFDecomposition::computeDifferenceEnergy(const Eigen::VectorXd &x, Eigen
 
 void CWFDecomposition::optimizeCWF()
 {
-	Eigen::VectorXd x0;
+	VectorX x0;
 	convertCWF2Variables(x0);
 
 	int iter = 0;
 	for(; iter < 10000; iter++)
 	{
 		// gradient descent
-		Eigen::VectorXd grad;
+		VectorX grad;
 		double f0 = computeDifferenceEnergy(x0, &grad, NULL);
 
 		if (grad.norm() < 1e-6)
@@ -173,7 +144,7 @@ void CWFDecomposition::optimizeCWF()
 		}
 		
 		double alpha = 1;
-		Eigen::VectorXd x1;
+		VectorX x1;
 		double f1 = f0;
 
 		bool energyDecrease = false;
@@ -213,15 +184,15 @@ void CWFDecomposition::optimizeCWF()
             if(iter % 20 == 0)
             {
                 convertVariables2CWF(x0);
-                std::vector<std::complex<double>> zvals;
-                Eigen::VectorXd omega;
+                ComplexVectorX zvals;
+                VectorX omega;
                 Eigen::MatrixXi baseF;
-                _baseMesh.GetFace(baseF);
-                omega = swapEdgeVec(baseF, _omega, 1);
-                rescaleZvals(_unitZvals, _amp, zvals);
-                saveVertexAmp("tmpAmp_" + std::to_string(iter / 100) + ".txt", _amp);
+                _baseCWF._mesh.GetFace(baseF);
+                omega = swapEdgeVec(baseF, _baseCWF._omega, 1);
+                rescaleZvals(_baseCWF._zvals, _baseCWF._amp, zvals);
+                saveVertexAmp("tmpAmp_" + std::to_string(iter / 100) + ".txt", _baseCWF._amp);
                 saveEdgeOmega("tmpOmega_" + std::to_string(iter / 100) + ".txt", omega);
-                saveVertexZvals("tmpUnitZval_" + std::to_string(iter / 100) + ".txt", _unitZvals);
+                saveVertexZvals("tmpUnitZval_" + std::to_string(iter / 100) + ".txt", _baseCWF._zvals);
                 saveVertexZvals("tmpZval_" + std::to_string(iter / 100) + ".txt", zvals);
             }
 		}

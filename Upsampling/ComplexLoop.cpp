@@ -16,12 +16,12 @@ std::vector<std::complex<double>> ComplexLoop::computeComplexWeight(const std::v
 	return complexWeights;
 }
 
-std::vector<std::complex<double>> ComplexLoop::computeComplexWeight(const std::vector<Eigen::Vector3d>& pList, const std::vector<Eigen::Vector3d>& gradThetaList, const std::vector<double>& pWeights)
+std::vector<std::complex<double>> ComplexLoop::computeComplexWeight(const std::vector<Vector3>& pList, const std::vector<Vector3>& gradThetaList, const std::vector<double>& pWeights)
 {
 	int nPoints = pList.size();
 	std::vector<double> dthetaList(nPoints, 0);
 
-	Eigen::Vector3d p = Eigen::Vector3d::Zero();
+	Vector3 p = Vector3::Zero();
 	for(int i = 0; i < nPoints; i++)
 	{
 		p += pWeights[i] * pList[i];
@@ -34,7 +34,7 @@ std::vector<std::complex<double>> ComplexLoop::computeComplexWeight(const std::v
 	return computeComplexWeight(dthetaList, pWeights);
 }
 
-std::vector<std::complex<double>> ComplexLoop::computeEdgeComplexWeight(const Eigen::VectorXd& omega, const Eigen::Vector2d& bary, int eid)
+std::vector<std::complex<double>> ComplexLoop::computeEdgeComplexWeight(const VectorX& omega, const Vector2& bary, int eid)
 {
 	double edgeOmega = omega[eid];  // one form, refered as theta[e1] - theta[e0]
 	double dtheta0 = bary[1] * edgeOmega;
@@ -46,7 +46,7 @@ std::vector<std::complex<double>> ComplexLoop::computeEdgeComplexWeight(const Ei
 	return computeComplexWeight(dthetaList, coordList);
 }
 
-std::vector<std::complex<double>> ComplexLoop::computeTriangleComplexWeight(const Eigen::VectorXd& omega, const Eigen::Vector3d& bary, int fid)
+std::vector<std::complex<double>> ComplexLoop::computeTriangleComplexWeight(const VectorX& omega, const Vector3& bary, int fid)
 {
 	std::vector<double> coordList = {bary[0], bary[1], bary[2]};
 	std::vector<double> dthetaList(3, 0);
@@ -72,7 +72,7 @@ std::vector<std::complex<double>> ComplexLoop::computeTriangleComplexWeight(cons
 	return computeComplexWeight(dthetaList, coordList);
 }
 
-void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatrix<std::complex<double>>& A)
+void ComplexLoop::BuildComplexS0(const VectorX& omega, ComplexSparseMatrixX& A)
 {
 	int V = _mesh.GetVertCount();
 	int E = _mesh.GetEdgeCount();
@@ -95,9 +95,9 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 				boundary[0] = _mesh.GetVertEdges(vi).front();
 				boundary[1] = _mesh.GetVertEdges(vi).back();
 
-				std::vector<Eigen::Vector3d> gradthetap(2);
+				std::vector<Vector3> gradthetap(2);
 				std::vector<double> coords = { 1. / 2, 1. / 2 };
-				std::vector<Eigen::Vector3d> pList(2);
+				std::vector<Vector3> pList(2);
 				std::vector<std::vector<int>> edgeVertMap(2, {-1, -1});
 
 				std::vector<std::vector<std::complex<double>>> innerWeights(2);
@@ -114,11 +114,11 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 
 					int vjInface = _mesh.GetVertIndexInFace(face, vj);
 
-					Eigen::Vector3d bary = Eigen::Vector3d::Zero();
+					Vector3 bary = Vector3::Zero();
 					bary(viInface) = 3. / 4;
 					bary(vjInface) = 1. / 4;
 
-					Eigen::Vector2d edgeBary;
+					Vector2 edgeBary;
 					bary[viInEdge] = 3. / 4.;
 					bary[1 - viInEdge] = 1. / 4.;
 
@@ -157,10 +157,10 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 			double beta = nNeiFaces / 2. * alpha;
 
 			std::vector<std::complex<double>> zp(nNeiFaces);
-			std::vector<Eigen::Vector3d> gradthetap(nNeiFaces);
+			std::vector<Vector3> gradthetap(nNeiFaces);
 			std::vector<double> coords;
 			coords.resize(nNeiFaces, 1. / nNeiFaces);
-			std::vector<Eigen::Vector3d> pList(nNeiFaces);
+			std::vector<Vector3> pList(nNeiFaces);
 			std::vector<std::vector<std::complex<double>>> innerWeights(nNeiFaces);
 			std::vector<std::complex<double>> outerWeights(nNeiFaces);
 			std::vector<std::vector<int>> faceVertMap(nNeiFaces, {-1, -1, -1});
@@ -169,11 +169,11 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 			{
 				int face = vFaces[k];
 				int viInface = _mesh.GetVertIndexInFace(face, vi);
-				Eigen::Vector3d bary;
+				Vector3 bary;
 				bary.setConstant(beta);
 				bary(viInface) = 1 - 2 * beta;
 
-				pList[k] = Eigen::Vector3d::Zero();
+				pList[k] = Vector3::Zero();
 				for (int i = 0; i < 3; i++)
 				{
 					pList[k] += bary(i) * _mesh.GetVertPos(_mesh.GetFaceVerts(face)[i]);
@@ -203,7 +203,7 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 		int row = edge + V;
 		if (_mesh.IsEdgeBoundary(edge))
 		{
-			Eigen::Vector2d bary;
+			Vector2 bary;
 			bary << 0.5, 0.5;
 			std::vector<std::complex<double>> complexWeight = computeEdgeComplexWeight(omega, bary, edge);
 			T.push_back({row, _mesh.GetEdgeVerts(edge)[0], complexWeight[0]});
@@ -211,9 +211,9 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 		}
 		else
 		{
-			std::vector<Eigen::Vector3d> gradthetap(2);
+			std::vector<Vector3> gradthetap(2);
 			std::vector<double> coords = { 1. / 2, 1. / 2 };
-			std::vector<Eigen::Vector3d> pList(2);
+			std::vector<Vector3> pList(2);
 			std::vector<std::vector<std::complex<double>>> innerWeights(2);
 			std::vector<std::complex<double>> outerWeights(2);
 			std::vector<std::vector<int>> faceVertMap(2, {-1, -1, -1});
@@ -223,11 +223,11 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 				int face = _mesh.GetEdgeFaces(edge)[j];
 				int offset = _mesh.GetEdgeIndexInFace(face, edge);
 
-				Eigen::Vector3d bary;
+				Vector3 bary;
 				bary.setConstant(3. / 8.);
 				bary((offset + 2) % 3) = 0.25;
 
-				pList[j] = Eigen::Vector3d::Zero();
+				pList[j] = Vector3::Zero();
 				for (int i = 0; i < 3; i++)
 				{
 					pList[j] += bary(i) * _mesh.GetVertPos(_mesh.GetFaceVerts(face)[i]);
@@ -253,30 +253,30 @@ void ComplexLoop::BuildComplexS0(const Eigen::VectorXd& omega, Eigen::SparseMatr
 	A.setFromTriplets(T.begin(), T.end());
 }
 
-Eigen::Vector3d ComplexLoop::computeGradThetaFromOmegaPerface(const Eigen::VectorXd& omega, int fid, int vInF)
+Vector3 ComplexLoop::computeGradThetaFromOmegaPerface(const VectorX& omega, int fid, int vInF)
 {
 	int vid = _mesh.GetFaceVerts(fid)[vInF];
 	int eid0 = _mesh.GetFaceEdges(fid)[vInF];
 	int eid1 = _mesh.GetFaceEdges(fid)[(vInF + 2) % 3];
-	Eigen::Vector3d r0 = _mesh.GetVertPos(_mesh.GetEdgeVerts(eid0)[1]) - _mesh.GetVertPos(_mesh.GetEdgeVerts(eid0)[0]);
-	Eigen::Vector3d r1 = _mesh.GetVertPos(_mesh.GetEdgeVerts(eid1)[1]) - _mesh.GetVertPos(_mesh.GetEdgeVerts(eid1)[0]);
+	Vector3 r0 = _mesh.GetVertPos(_mesh.GetEdgeVerts(eid0)[1]) - _mesh.GetVertPos(_mesh.GetEdgeVerts(eid0)[0]);
+	Vector3 r1 = _mesh.GetVertPos(_mesh.GetEdgeVerts(eid1)[1]) - _mesh.GetVertPos(_mesh.GetEdgeVerts(eid1)[0]);
 
 	Eigen::Matrix2d Iinv, I;
 	I << r0.dot(r0), r0.dot(r1), r1.dot(r0), r1.dot(r1);
 	Iinv = I.inverse();
 
-	Eigen::Vector2d rhs;
+	Vector2 rhs;
 	double w1 = omega(eid0);
 	double w2 = omega(eid1);
 	rhs << w1, w2;
 
-	Eigen::Vector2d u = Iinv * rhs;
+	Vector2 u = Iinv * rhs;
 	return u[0] * r0 + u[1] * r1;
 }
 
-Eigen::Vector3d ComplexLoop::computeBaryGradThetaFromOmegaPerface(const Eigen::VectorXd& omega, int fid, const Eigen::Vector3d& bary)
+Vector3 ComplexLoop::computeBaryGradThetaFromOmegaPerface(const VectorX& omega, int fid, const Vector3& bary)
 {
-	Eigen::Vector3d gradTheta = Eigen::Vector3d::Zero();
+	Vector3 gradTheta = Vector3::Zero();
 	for(int i = 0; i < 3; i++)
 	{
 		gradTheta += bary[i] * computeGradThetaFromOmegaPerface(omega, fid, i);
@@ -285,42 +285,51 @@ Eigen::Vector3d ComplexLoop::computeBaryGradThetaFromOmegaPerface(const Eigen::V
 }
 
 
-void ComplexLoop::CWFSubdivide(const Eigen::VectorXd& omega, const std::vector<std::complex<double>>& zvals, Eigen::VectorXd& omegaNew, std::vector<std::complex<double>>& upZvals, int level)
+void ComplexLoop::CWFSubdivide(const CWF& cwf, CWF& upcwf, int level, SparseMatrixX* upS0, SparseMatrixX* upS1, ComplexSparseMatrixX* upComplexS0)
 {
-	
+	SetMesh(cwf._mesh);
 	int nverts = _mesh.GetVertCount();
-	omegaNew = omega;
-	upZvals = zvals;
-
+	int nedges = _mesh.GetEdgeCount();
 
 	MatrixX X;
 	_mesh.GetPos(X);
 	auto _backupMesh = _mesh;
 
-	Eigen::VectorXd amp(nverts);
-	Eigen::VectorXcd zvec(nverts);
-	
-	for (int i = 0; i < nverts; i++)
+	SparseMatrixX S0, S1;
+	ComplexSparseMatrixX CS0;
+
+	if (upS0)
 	{
-		amp(i) = std::abs(zvals[i]);
-		zvec[i] = zvals[i];
+		S0.resize(nverts, nverts);
+		S0.setIdentity();
 	}
 
+	if (upS1)
+	{
+		S1.resize(nedges, nedges);
+		S1.setIdentity();
+	}
+
+	if (upComplexS0)
+	{
+		CS0.resize(nverts, nverts);
+		CS0.setIdentity();
+	}
+
+	upcwf = cwf;
 	
-
-
 	for (int l = 0; l < level; ++l) 
 	{
 		SparseMatrixX tmpS0, tmpS1;
-		Eigen::SparseMatrix<std::complex<double>> tmpCS0;
+		ComplexSparseMatrixX tmpCS0;
 		BuildS0(tmpS0);
 		BuildS1(tmpS1);
-		BuildComplexS0(omegaNew, tmpCS0);
+		BuildComplexS0(upcwf._omega, tmpCS0);
 
 		X = tmpS0 * X;
-		amp = tmpS0 * amp;
-		zvec = tmpCS0 * zvec;
-		omegaNew = tmpS1 * omegaNew;
+		upcwf._amp = tmpS0 * upcwf._amp;
+		upcwf._omega = tmpS1 * upcwf._omega;
+		upcwf._zvals = tmpCS0 * upcwf._zvals;
 
 		std::vector<Vector3> points;
 		ConvertToVector3(X, points);
@@ -332,9 +341,22 @@ void ComplexLoop::CWFSubdivide(const Eigen::VectorXd& omega, const std::vector<s
 		GetSubdividedFaces(faceToVert);
 
 		_mesh.Populate(points, faceToVert, edgeToVert);
+
+		if (upS0)
+			S0 = tmpS0 * S0;
+		if (upS1)
+			S1 = tmpS1 * S1;
+		if (upComplexS0)
+			CS0 = tmpCS0 * CS0;
 	}
+
+	upcwf._mesh = _mesh;
 	std::swap(_backupMesh, _mesh);
-	upZvals.resize(zvec.rows());
-	for (int i = 0; i < upZvals.size(); i++)
-		upZvals[i] = zvec[i];
+
+	if (upS0)
+		*upS0 = S0;
+	if (upS1)
+		*upS1 = S1;
+	if (upComplexS0)
+		*upComplexS0 = CS0;
 }

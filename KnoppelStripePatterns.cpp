@@ -7,10 +7,9 @@
 #include <iostream>
 
 
-void computeEdgeMatrix(const Mesh &mesh, const Eigen::VectorXd& edgeW, const Eigen::VectorXd& edgeWeight,
-									 const int nverts, Eigen::SparseMatrix<double> &A)
+void computeEdgeMatrix(const Mesh& mesh, const VectorX& edgeW, const VectorX& edgeWeight, const int nverts, SparseMatrixX& A)
 {
-	std::vector<Eigen::Triplet<double>> AT;
+	std::vector<TripletX> AT;
 	int nedges = mesh.GetEdgeCount();
 
 	for(int i = 0; i < nedges; i++)
@@ -41,8 +40,9 @@ void computeEdgeMatrix(const Mesh &mesh, const Eigen::VectorXd& edgeW, const Eig
 	A.setFromTriplets(AT.begin(), AT.end());
 }
 
-void computeEdgeMatrixGivenMag(const Mesh &mesh, const Eigen::VectorXd& edgeW, const Eigen::VectorXd& vertAmp, const Eigen::VectorXd& edgeWeight, const int nverts, Eigen::SparseMatrix<double>& A) {
-	std::vector<Eigen::Triplet<double>> AT;
+void computeEdgeMatrixGivenMag(const Mesh& mesh, const VectorX& edgeW, const VectorX& vertAmp, const VectorX& edgeWeight, const int nverts, SparseMatrixX& A)
+{
+	std::vector<TripletX> AT;
 	int nedges = mesh.GetEdgeCount();
 
 	for (int i = 0; i < nedges; i++) {
@@ -76,10 +76,9 @@ void computeEdgeMatrixGivenMag(const Mesh &mesh, const Eigen::VectorXd& edgeW, c
 	A.setFromTriplets(AT.begin(), AT.end());
 }
 
-void roundZvalsFromEdgeOmega(const Mesh &mesh, const Eigen::VectorXd& edgeW,
-	const Eigen::VectorXd& edgeWeight, const Eigen::VectorXd& vertArea, const int nverts, std::vector<std::complex<double>> &zvals)
+void roundZvalsFromEdgeOmega(const Mesh& mesh, const VectorX& edgeW, const VectorX& edgeWeight, const VectorX& vertArea, int nverts, ComplexVectorX& zvals)
 {
-	std::vector<Eigen::Triplet<double>> BT;
+	std::vector<TripletX> BT;
 	int nfaces = mesh.GetFaceCount();
 	int nedges = mesh.GetEdgeCount();
 
@@ -90,10 +89,10 @@ void roundZvalsFromEdgeOmega(const Mesh &mesh, const Eigen::VectorXd& edgeW,
 	}
 	
 	
-	Eigen::SparseMatrix<double> A;
+	SparseMatrixX A;
 	computeEdgeMatrix(mesh, edgeW, edgeWeight, nverts, A);
 
-	Eigen::SparseMatrix<double> B(2 * nverts, 2 * nverts);
+	SparseMatrixX B(2 * nverts, 2 * nverts);
 	B.setFromTriplets(BT.begin(), BT.end());
 
 	Spectra::SymShiftInvert<double> op(A, B);
@@ -114,16 +113,16 @@ void roundZvalsFromEdgeOmega(const Mesh &mesh, const Eigen::VectorXd& edgeW,
 
 	std::cout << "Eigenvalue is " << evalues[0] << std::endl;
 
-	zvals.clear();
+	zvals.resize(nverts);
 	for(int i = 0; i < nverts; i++)
 	{
-		zvals.push_back(std::complex<double>(evecs(2 * i, 0), evecs(2 * i + 1, 0)));
+		zvals[i] = std::complex<double>(evecs(2 * i, 0), evecs(2 * i + 1, 0));
 	}
 }
 
-void roundZvalsFromEdgeOmegaVertexMag(const Mesh &mesh, const Eigen::VectorXd& edgeW, const Eigen::VectorXd& vertAmp, const Eigen::VectorXd& edgeWeight, const Eigen::VectorXd& vertArea, const int nverts, std::vector<std::complex<double>>& zvals)
+void roundZvalsFromEdgeOmegaVertexMag(const Mesh& mesh, const VectorX& edgeW, const VectorX& vertAmp, const VectorX& edgeWeight, const VectorX& vertArea, int nverts, ComplexVectorX& zvals)
 {
-	std::vector<Eigen::Triplet<double>> BT;
+	std::vector<TripletX> BT;
 	int nfaces = mesh.GetFaceCount();
 	int nedges = mesh.GetEdgeCount();
 
@@ -133,15 +132,15 @@ void roundZvalsFromEdgeOmegaVertexMag(const Mesh &mesh, const Eigen::VectorXd& e
 		BT.push_back({ 2 * i + 1, 2 * i + 1, vertArea(i) });
 	}
 
-	Eigen::SparseMatrix<double> A;
+	SparseMatrixX A;
 	computeEdgeMatrixGivenMag(mesh, edgeW, vertAmp, edgeWeight, nverts, A);
 
-	Eigen::CholmodSupernodalLLT<Eigen::SparseMatrix<double>> solver;
-	Eigen::SparseMatrix<double> I = A;
+	Eigen::CholmodSupernodalLLT<SparseMatrixX> solver;
+	SparseMatrixX I = A;
 
     I.setIdentity();
 	double eps = 1e-16;
-    Eigen::SparseMatrix<double> tmpA = A + eps * I;
+    SparseMatrixX tmpA = A + eps * I;
 	solver.compute(tmpA);
 	while(solver.info() != Eigen::Success)
 	{
@@ -151,13 +150,13 @@ void roundZvalsFromEdgeOmegaVertexMag(const Mesh &mesh, const Eigen::VectorXd& e
         tmpA = A + eps * I;
 	}
 
-	Eigen::SparseMatrix<double> B(2 * nverts, 2 * nverts);
+	SparseMatrixX B(2 * nverts, 2 * nverts);
 	B.setFromTriplets(BT.begin(), BT.end());
 	//B.setIdentity();
 
-	Spectra::SymShiftInvert<double> op(A, B);
-	Spectra::SparseSymMatProd<double> Bop(B);
-	Spectra::SymGEigsShiftSolver<Spectra::SymShiftInvert<double>, Spectra::SparseSymMatProd<double>, Spectra::GEigsMode::ShiftInvert> geigs(op, Bop, 1, 6, -2 * eps);
+	Spectra::SymShiftInvert<Scalar> op(A, B);
+	Spectra::SparseSymMatProd<Scalar> Bop(B);
+	Spectra::SymGEigsShiftSolver<Spectra::SymShiftInvert<Scalar>, Spectra::SparseSymMatProd<Scalar>, Spectra::GEigsMode::ShiftInvert> geigs(op, Bop, 1, 6, -2 * eps);
 	
 	geigs.init();
 	int nconv = geigs.compute(Spectra::SortRule::LargestMagn, 1e6);
@@ -175,12 +174,11 @@ void roundZvalsFromEdgeOmegaVertexMag(const Mesh &mesh, const Eigen::VectorXd& e
 
 	std::cout << "Eigenvalue is " << evalues[0] << std::endl;
 
-	zvals.clear();
+	zvals.resize(nverts);
 	for(int i = 0; i < nverts; i++)
 	{
-		std::complex<double> z = std::complex<double>(evecs(2 * i, 0), evecs(2 * i + 1, 0));
-		z = vertAmp(i) * std::complex<double>(std::cos(std::arg(z)), std::sin(std::arg(z)));
-		zvals.push_back(z);
+		zvals[i] = std::complex<double>(evecs(2 * i, 0), evecs(2 * i + 1, 0));
+		zvals[i] = vertAmp(i) * std::complex<double>(std::cos(std::arg(zvals[i])), std::sin(std::arg(zvals[i])));
 	}
 }
 
