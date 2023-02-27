@@ -79,6 +79,24 @@ public:
     }
     inline void SetPos(const MatrixX& X) { ConvertToVector3(X, _points); }
 
+    inline MatrixX GetPos() const
+    {
+        MatrixX X;
+        ConvertToMatrix (_points, X);
+        return X;
+    }
+    inline Eigen::MatrixXi GetFace() const
+    {
+        Eigen::MatrixXi F;
+        F = Eigen::MatrixXi::Zero(_faceToVert.size(), 3);
+        #pragma omp parallel for
+        for (int i = 0; i < (int) _faceToVert.size(); ++i)
+        {
+            F.row(i) << _faceToVert[i][0], _faceToVert[i][1], _faceToVert[i][2];
+        }
+        return F;
+    }
+
     bool HasBoundary() const;
     
     // Return +1 if face has (edgeVert0,edgeVert1)

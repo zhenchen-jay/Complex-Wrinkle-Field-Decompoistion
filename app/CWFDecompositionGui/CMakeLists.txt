@@ -11,12 +11,16 @@ file(GLOB SRCFILES
     ../../Upsampling/*.h
     ../../Decomposition/*.h
     ../../MeshLib/*.h
+    ../../SecondFundamentalForm/*.h
+    ../../TFWShell/*.h
     ../../*.h
     ../../*.hpp
     *.h
     ../../Decomposition/*.cpp
     ../../Upsampling/*.cpp
     ../../MeshLib/*.cpp
+    ../../SecondFundamentalForm/*.cpp
+    ../../TFWShell/*.cpp
     ../../*.cpp
     *.cpp)
     

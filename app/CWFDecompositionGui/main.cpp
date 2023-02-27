@@ -334,7 +334,7 @@ void callback() {
         refWrinkledMesh.SetPos(refWrinkledV);
 
 		CWFDecomposition decompModel(refWrinkledMesh);
-		decompModel.intialization(baseCWF, upsampleTimes);
+		decompModel.initialization(baseCWF, upsampleTimes);
 		decompModel.optimizeCWF();
 		decompModel.getCWF(baseCWF);
 
