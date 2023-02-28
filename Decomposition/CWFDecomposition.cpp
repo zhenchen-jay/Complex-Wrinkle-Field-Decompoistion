@@ -10,15 +10,16 @@ void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes)
 	_baseCWF = cwf;
 	_upsampleTimes = upsampleTimes;
 	_subOp = std::make_shared<ComplexLoop>();
-	_subOp->SetMesh(_baseCWF._mesh);
-	_upMesh = _subOp->meshSubdivide(upsampleTimes);
+	CWF upcwf;
+	_subOp->CWFSubdivide(cwf, upcwf, upsampleTimes, &_LoopS0, nullptr, &_upZMat);
+	_upMesh = upcwf._mesh;
 	_upMesh.GetPos(_upV);
 	_upMesh.GetFace(_upF);
 	igl::per_vertex_normals(_upV, _upF, _upN);
 	_baseEdgeArea = getEdgeArea(_baseCWF._mesh);
+	_baseVertArea = getVertArea(_baseCWF._mesh);
 	_upVertArea = getVertArea(_upMesh);
 
-	_subOp->BuildS0(_LoopS0);
 	updateWrinkleCompUpMat();
 }
 
@@ -36,12 +37,14 @@ void CWFDecomposition::initialization(
 	_upsampleTimes = upsampleTimes;
 	_subOp = std::make_shared<ComplexLoop>();
 	_subOp->SetMesh(_baseCWF._mesh);
-	
-	_upMesh = _subOp->meshSubdivide(upsampleTimes);
+	CWF upcwf;
+	_subOp->CWFSubdivide(cwf, upcwf, upsampleTimes, &_LoopS0, nullptr, &_upZMat);
+	_upMesh = upcwf._mesh;
 	_upMesh.GetPos(_upV);
 	_upMesh.GetFace(_upF);
 	igl::per_vertex_normals(_upV, _upF, _upN);
 	_baseEdgeArea = getEdgeArea(_baseCWF._mesh);
+	_baseVertArea = getVertArea(_baseCWF._mesh);
 	_upVertArea = getVertArea(_upMesh);
 
     _restMesh = restMesh;
@@ -64,13 +67,13 @@ void CWFDecomposition::initialization(
     tfwShell = TFWShell(restPos, restMeshCon, curPos, curMeshCon, poissonRatio, thickness, youngsModulus);
     tfwShell.initialization();
 
-	_subOp->BuildS0(_LoopS0);
 	updateWrinkleCompUpMat();
 }
 
 void CWFDecomposition::updateWrinkleCompUpMat()
 {
-	_subOp->BuildComplexS0(_baseCWF._omega, _upZMat);
+	CWF upcwf;
+	_subOp->CWFSubdivide(_baseCWF, upcwf, _upsampleTimes, &_LoopS0, nullptr, &_upZMat);
 	std::vector<TripletX> T;
 	
 	for (int k = 0; k < _upZMat.outerSize(); ++k) 
@@ -256,22 +259,26 @@ void CWFDecomposition::optimizePhase()
 		double compatEnergy = 0.5 * x.dot(_zvalCompHess * x);
 		double diffEnergy = 0.5 * x.dot(_zvalDiffHess * x) + _zvalDiffCoeff.dot(x) + diff0;
 
+		Eigen::VectorXd unitGrad;
+		SparseMatrixX unitHess;
+		double unitEnergy = computeUnitNormEnergy(zvec, grad ? &unitGrad : nullptr, hess ? &unitHess : nullptr, isProj);
+
 		/*double compatEnergy = computeCompatibilityEnergy(_baseCWF._omega, zvec);
 		double diffEnergy = computeDifferenceFromZvals(zvec);*/
 
-		double r = 1e3;
+		double rc = 1e-3;
+		double runit = 1e-3;
 
 		if (grad || hess)
 		{
 			if (grad)
 			{
-				(*grad) = (_zvalDiffHess * x + _zvalDiffCoeff) + r * _zvalCompHess * x;
+				(*grad) = (_zvalDiffHess * x + _zvalDiffCoeff) + rc * _zvalCompHess * x + runit * unitGrad;
 			}
 			if (hess)
-				(*hess) = _zvalDiffHess + r * _zvalCompHess;
+				(*hess) = _zvalDiffHess + rc * _zvalCompHess + runit * unitHess;
 		}
-
-		return diffEnergy + r * compatEnergy;
+		return diffEnergy + rc * compatEnergy + runit * unitEnergy;
 
 	};
 
@@ -280,9 +287,31 @@ void CWFDecomposition::optimizePhase()
 		return 1.0;
 	};
 
+	/*auto unitEnergy = [&](const Eigen::VectorXd& x, Eigen::VectorXd* grad, Eigen::SparseMatrix<double>* hess, bool isProj)
+	{
+		convert2Zvals(x);
+		Eigen::VectorXd unitGrad;
+		SparseMatrixX unitHess;
+		double unitEnergy = computeUnitNormEnergy(zvec, grad ? &unitGrad : nullptr, hess ? &unitHess : nullptr, isProj);
+		double runit = 1e3;
+
+		if (grad || hess)
+		{
+			if (grad)
+			{
+				(*grad) = runit * unitGrad;
+			}
+			if (hess)
+				(*hess) = runit * unitHess;
+		}
+		return runit * unitEnergy;
+
+	};*/
+
 	Eigen::VectorXd x;
 	convertFromZvals(x);
 	NewtonSolver(zvalEnergy, findMaxStep, x, 1000, 1e-6, 1e-15, 1e-15, true);
+	//testFuncGradHessian(unitEnergy, x);
 	convert2Zvals(x);
 	_baseCWF._zvals = zvec;
 }
@@ -308,7 +337,6 @@ void CWFDecomposition::precomputationForPhase()
 	std::vector<TripletX> AT;
 	int nedges = _baseCWF._mesh.GetEdgeCount();
 	int nverts = _baseCWF._mesh.GetVertCount();
-	double energy = 0;
 
 	for (int i = 0; i < nedges; i++)
 	{
@@ -481,6 +509,60 @@ double CWFDecomposition::computeDifferenceFromZvals(const ComplexVectorX& zvals,
 	return energy;
 }
 
+double CWFDecomposition::computeUnitNormEnergy(const ComplexVectorX& zvals, VectorX* grad, SparseMatrixX* hess, bool isProj)
+{
+	int nverts = zvals.rows();
+	double energy = 0;
+
+	if (grad)
+		grad->setZero(2 * nverts);
+
+	std::vector<TripletX> T;
+	
+	for (int vid = 0; vid < nverts; vid++)
+	{
+		double ampSq = zvals[vid].real() * zvals[vid].real() + zvals[vid].imag() * zvals[vid].imag();
+		double refAmpSq = 1;
+		
+		double ca = _baseVertArea[vid];
+
+		energy += ca * (ampSq - refAmpSq) * (ampSq - refAmpSq);
+
+		if (grad)
+		{
+			(*grad)(2 * vid) += 2.0 * ca * (ampSq - refAmpSq) * (2.0 * zvals[vid].real());
+			(*grad)(2 * vid + 1) += 2.0 * ca * (ampSq - refAmpSq) * (2.0 * zvals[vid].imag());
+		}
+
+		if (hess)
+		{
+			Eigen::Matrix2d tmpHess;
+			tmpHess <<
+				2.0 * zvals[vid].real() * 2.0 * zvals[vid].real(),
+				2.0 * zvals[vid].real() * 2.0 * zvals[vid].imag(),
+				2.0 * zvals[vid].real() * 2.0 * zvals[vid].imag(),
+				2.0 * zvals[vid].imag() * 2.0 * zvals[vid].imag();
+
+			tmpHess *= 2.0 * ca;
+			tmpHess += 2.0 * ca * (ampSq - refAmpSq) * (2.0 * Eigen::Matrix2d::Identity());
+
+
+			if (isProj)
+				tmpHess = SPDProjection(tmpHess);
+
+			for (int k = 0; k < 2; k++)
+				for (int l = 0; l < 2; l++)
+					T.push_back({ 2 * vid + k, 2 * vid + l, tmpHess(k, l) });
+		}
+	}
+
+	if (hess)
+	{
+		hess->resize(2 * nverts, 2 * nverts);
+		hess->setFromTriplets(T.begin(), T.end());
+	}
+	return energy;
+}
 
 void CWFDecomposition::testDifferenceFromZvals(const ComplexVectorX& zvals)
 {

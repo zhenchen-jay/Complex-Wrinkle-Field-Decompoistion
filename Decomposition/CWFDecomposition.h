@@ -41,6 +41,7 @@ public:
     double computeDifferenceFromZvals(const ComplexVectorX& zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
     double computeCompatibilityEnergy(const VectorX& omega, const ComplexVectorX& zvals, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
     // compute compatibility between omega (_baseCWF.omega) and zvals
+    double computeUnitNormEnergy(const ComplexVectorX& zval, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr, bool isProj = true);
 
     void testDifferenceFromZvals(const ComplexVectorX& zvals);
 
@@ -72,7 +73,7 @@ private:
     double _poissonRatio;
     double _thickness;
     // base mesh get edge (fixed as the initial ones)
-    VectorX _baseEdgeArea;
+    VectorX _baseEdgeArea, _baseVertArea;
     VectorX _upVertArea;
 
     // upsample Amp

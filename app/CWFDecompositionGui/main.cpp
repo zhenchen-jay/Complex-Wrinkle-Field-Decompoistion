@@ -302,13 +302,15 @@ void callback() {
 		{
 			if (upsampleTimes >= 0)
 			{
-				subdivideMesh();
+				subdivideMesh(true);		// reference mesh
+				subdivideMesh(false);		// initial mesh
 				updateView(true);
 			}
 		}
 		if (ImGui::Checkbox("fix bnd", &isFixedBnd))
 		{
-			subdivideMesh();
+			subdivideMesh(true);		// reference mesh
+			subdivideMesh(false);		// initial mesh
 			updateView(true);
 		}
 	}
@@ -336,9 +338,6 @@ void callback() {
 		CWFDecomposition decompModel(refWrinkledMesh);
 		decompModel.initialization(baseCWF, upsampleTimes);
 		decompModel.optimizePhase();
-		decompModel.testDifferenceFromZvals(baseCWF._zvals);
-
-	/*	decompModel.optimizeCWF();
 		decompModel.getCWF(baseCWF);
 
 		ComplexVectorX unitZvals = baseCWF._zvals;
@@ -346,7 +345,7 @@ void callback() {
 		amp = baseCWF._amp;
 		rescaleZvals(unitZvals, amp, zvals);
 		subdivideMesh(false);
-		updateView(false);*/
+		updateView(false);
 	}
 
 	ImGui::PopItemWidth();
