@@ -13,6 +13,7 @@ file(GLOB SRCFILES
     ../../MeshLib/*.h
     ../../SecondFundamentalForm/*.h
     ../../TFWShell/*.h
+    ../../Optimization/*.h
     ../../*.h
     ../../*.hpp
     *.h
@@ -21,6 +22,7 @@ file(GLOB SRCFILES
     ../../MeshLib/*.cpp
     ../../SecondFundamentalForm/*.cpp
     ../../TFWShell/*.cpp
+    ../../Optimization/*.cpp
     ../../*.cpp
     *.cpp)
     

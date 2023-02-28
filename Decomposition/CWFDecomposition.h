@@ -34,10 +34,15 @@ public:
     void optimizeCWF();
 
     void optimizeAmpOmega();
+    void precomputationForPhase();
     void optimizePhase();
     void optimizeBasemesh();
 
-    double computeDifferenceEnergy(const VectorX& x, VectorX *grad = NULL, Eigen::SparseMatrix<double> *hess = NULL);
+    double computeDifferenceFromZvals(const ComplexVectorX& zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
+    double computeCompatibilityEnergy(const VectorX& omega, const ComplexVectorX& zvals, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
+    // compute compatibility between omega (_baseCWF.omega) and zvals
+
+    void testDifferenceFromZvals(const ComplexVectorX& zvals);
 
 private:
     void convertCWF2Variables(VectorX& x);
@@ -46,12 +51,17 @@ private:
     void convertCWF2Variables(const CWF& cwf, VectorX& x);
     void convertVariables2CWF(const VectorX& x, CWF& cwf);
 
+    void updateWrinkleCompUpMat();
+
 
 private:
     CWF _baseCWF;
     Mesh _upMesh, _restMesh, _restWrinkledMesh, _wrinkledMesh;
-    Eigen::MatrixXd _upV, _upN, _wrinkledV;
+    MatrixX _upV, _upN, _wrinkledV;
     Eigen::MatrixXi _upF, _wrinkledF;
+
+    ComplexSparseMatrixX _upZMat;
+    SparseMatrixX _wrinkleCompUpMat, _LoopS0;
 
     int _upsampleTimes;
 
@@ -61,4 +71,14 @@ private:
     double _youngsModulus;
     double _poissonRatio;
     double _thickness;
+    // base mesh get edge (fixed as the initial ones)
+    VectorX _baseEdgeArea;
+    VectorX _upVertArea;
+
+    // upsample Amp
+    VectorX _upAmp;
+
+    // precomputations
+    SparseMatrixX _zvalDiffHess, _zvalCompHess;
+    VectorX _zvalDiffCoeff;
 };

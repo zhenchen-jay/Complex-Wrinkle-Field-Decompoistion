@@ -335,7 +335,10 @@ void callback() {
 
 		CWFDecomposition decompModel(refWrinkledMesh);
 		decompModel.initialization(baseCWF, upsampleTimes);
-		decompModel.optimizeCWF();
+		decompModel.optimizePhase();
+		decompModel.testDifferenceFromZvals(baseCWF._zvals);
+
+	/*	decompModel.optimizeCWF();
 		decompModel.getCWF(baseCWF);
 
 		ComplexVectorX unitZvals = baseCWF._zvals;
@@ -343,12 +346,11 @@ void callback() {
 		amp = baseCWF._amp;
 		rescaleZvals(unitZvals, amp, zvals);
 		subdivideMesh(false);
-		updateView(false);
+		updateView(false);*/
 	}
 
 	ImGui::PopItemWidth();
 }
-
 
 int main(int argc, char** argv)
 {
