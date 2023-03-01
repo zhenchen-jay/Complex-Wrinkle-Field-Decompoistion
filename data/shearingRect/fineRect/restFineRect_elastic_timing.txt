@@ -1,0 +1,214 @@
+iter: 1, total time: 10.483
+grad_cost: 0.023, hess_cost: 1.431, solver_cost: 8.857, collision_cost: 0, linesearch_cost: 0.134, update_cost: 0, checkConverg_cost: 0.038
+iter: 2, total time: 20.834
+grad_cost: 0.048, hess_cost: 2.749, solver_cost: 17.643, collision_cost: 0, linesearch_cost: 0.308, update_cost: 0, checkConverg_cost: 0.086
+iter: 3, total time: 31.703
+grad_cost: 0.074, hess_cost: 4.034, solver_cost: 26.98, collision_cost: 0, linesearch_cost: 0.487, update_cost: 0, checkConverg_cost: 0.128
+iter: 4, total time: 43.735
+grad_cost: 0.1, hess_cost: 5.391, solver_cost: 37.427, collision_cost: 0, linesearch_cost: 0.651, update_cost: 0, checkConverg_cost: 0.166
+iter: 5, total time: 54.32
+grad_cost: 0.126, hess_cost: 6.938, solver_cost: 46.285, collision_cost: 0, linesearch_cost: 0.765, update_cost: 0, checkConverg_cost: 0.206
+iter: 6, total time: 64.625
+grad_cost: 0.151, hess_cost: 8.393, solver_cost: 54.935, collision_cost: 0, linesearch_cost: 0.894, update_cost: 0, checkConverg_cost: 0.252
+iter: 7, total time: 75.106
+grad_cost: 0.177, hess_cost: 9.884, solver_cost: 63.751, collision_cost: 0, linesearch_cost: 0.994, update_cost: 0, checkConverg_cost: 0.3
+iter: 8, total time: 85.771
+grad_cost: 0.203, hess_cost: 11.277, solver_cost: 72.823, collision_cost: 0, linesearch_cost: 1.129, update_cost: 0, checkConverg_cost: 0.339
+iter: 9, total time: 96.349
+grad_cost: 0.23, hess_cost: 12.678, solver_cost: 81.855, collision_cost: 0, linesearch_cost: 1.208, update_cost: 0, checkConverg_cost: 0.378
+iter: 10, total time: 108.408
+grad_cost: 0.258, hess_cost: 14.043, solver_cost: 92.372, collision_cost: 0, linesearch_cost: 1.319, update_cost: 0, checkConverg_cost: 0.416
+iter: 11, total time: 120.828
+grad_cost: 0.282, hess_cost: 16.584, solver_cost: 102.106, collision_cost: 0, linesearch_cost: 1.401, update_cost: 0, checkConverg_cost: 0.455
+iter: 12, total time: 131.585
+grad_cost: 0.311, hess_cost: 18.007, solver_cost: 111.314, collision_cost: 0, linesearch_cost: 1.458, update_cost: 0, checkConverg_cost: 0.495
+iter: 13, total time: 143.716
+grad_cost: 0.336, hess_cost: 19.39, solver_cost: 121.942, collision_cost: 0, linesearch_cost: 1.511, update_cost: 0, checkConverg_cost: 0.537
+iter: 14, total time: 154.769
+grad_cost: 0.361, hess_cost: 20.928, solver_cost: 131.303, collision_cost: 0, linesearch_cost: 1.588, update_cost: 0, checkConverg_cost: 0.589
+iter: 15, total time: 166.471
+grad_cost: 0.385, hess_cost: 23.242, solver_cost: 140.572, collision_cost: 0, linesearch_cost: 1.642, update_cost: 0, checkConverg_cost: 0.63
+iter: 16, total time: 180.822
+grad_cost: 0.411, hess_cost: 24.831, solver_cost: 153.208, collision_cost: 0, linesearch_cost: 1.698, update_cost: 0, checkConverg_cost: 0.674
+iter: 17, total time: 192.043
+grad_cost: 0.44, hess_cost: 26.282, solver_cost: 162.839, collision_cost: 0, linesearch_cost: 1.763, update_cost: 0, checkConverg_cost: 0.719
+iter: 18, total time: 204.594
+grad_cost: 0.465, hess_cost: 27.721, solver_cost: 173.815, collision_cost: 0, linesearch_cost: 1.821, update_cost: 0, checkConverg_cost: 0.772
+iter: 19, total time: 217.154
+grad_cost: 0.491, hess_cost: 29.195, solver_cost: 184.777, collision_cost: 0, linesearch_cost: 1.875, update_cost: 0, checkConverg_cost: 0.816
+iter: 20, total time: 230.213
+grad_cost: 0.513, hess_cost: 31.393, solver_cost: 195.512, collision_cost: 0, linesearch_cost: 1.938, update_cost: 0, checkConverg_cost: 0.857
+iter: 21, total time: 243.338
+grad_cost: 0.534, hess_cost: 32.78, solver_cost: 207.114, collision_cost: 0, linesearch_cost: 1.999, update_cost: 0, checkConverg_cost: 0.911
+iter: 22, total time: 254.362
+grad_cost: 0.556, hess_cost: 34.211, solver_cost: 216.586, collision_cost: 0, linesearch_cost: 2.056, update_cost: 0, checkConverg_cost: 0.953
+iter: 23, total time: 266.521
+grad_cost: 0.577, hess_cost: 35.602, solver_cost: 227.23, collision_cost: 0, linesearch_cost: 2.113, update_cost: 0, checkConverg_cost: 0.999
+iter: 24, total time: 278.404
+grad_cost: 0.599, hess_cost: 37.018, solver_cost: 237.458, collision_cost: 0, linesearch_cost: 2.275, update_cost: 0, checkConverg_cost: 1.054
+iter: 25, total time: 289.946
+grad_cost: 0.623, hess_cost: 38.677, solver_cost: 247.22, collision_cost: 0, linesearch_cost: 2.33, update_cost: 0, checkConverg_cost: 1.096
+iter: 26, total time: 302.371
+grad_cost: 0.644, hess_cost: 40.045, solver_cost: 258.12, collision_cost: 0, linesearch_cost: 2.406, update_cost: 0, checkConverg_cost: 1.156
+iter: 27, total time: 313.633
+grad_cost: 0.673, hess_cost: 41.526, solver_cost: 267.768, collision_cost: 0, linesearch_cost: 2.466, update_cost: 0, checkConverg_cost: 1.2
+iter: 28, total time: 326.076
+grad_cost: 0.696, hess_cost: 43.114, solver_cost: 278.494, collision_cost: 0, linesearch_cost: 2.528, update_cost: 0, checkConverg_cost: 1.244
+iter: 29, total time: 338.351
+grad_cost: 0.721, hess_cost: 44.78, solver_cost: 288.982, collision_cost: 0, linesearch_cost: 2.581, update_cost: 0, checkConverg_cost: 1.287
+iter: 30, total time: 349.499
+grad_cost: 0.742, hess_cost: 46.191, solver_cost: 298.598, collision_cost: 0, linesearch_cost: 2.639, update_cost: 0, checkConverg_cost: 1.329
+iter: 31, total time: 363.656
+grad_cost: 0.765, hess_cost: 47.709, solver_cost: 311.111, collision_cost: 0, linesearch_cost: 2.7, update_cost: 0, checkConverg_cost: 1.371
+iter: 32, total time: 376.489
+grad_cost: 0.787, hess_cost: 49.142, solver_cost: 322.304, collision_cost: 0, linesearch_cost: 2.809, update_cost: 0, checkConverg_cost: 1.447
+iter: 33, total time: 390.041
+grad_cost: 0.816, hess_cost: 50.756, solver_cost: 333.732, collision_cost: 0, linesearch_cost: 2.918, update_cost: 0, checkConverg_cost: 1.819
+iter: 34, total time: 404.665
+grad_cost: 0.84, hess_cost: 52.599, solver_cost: 346.367, collision_cost: 0, linesearch_cost: 2.982, update_cost: 0, checkConverg_cost: 1.877
+iter: 35, total time: 417.975
+grad_cost: 0.865, hess_cost: 54.368, solver_cost: 357.706, collision_cost: 0, linesearch_cost: 3.08, update_cost: 0, checkConverg_cost: 1.956
+iter: 36, total time: 429.751
+grad_cost: 0.889, hess_cost: 55.904, solver_cost: 367.811, collision_cost: 0, linesearch_cost: 3.145, update_cost: 0, checkConverg_cost: 2.002
+iter: 37, total time: 445.048
+grad_cost: 0.911, hess_cost: 57.548, solver_cost: 381.25, collision_cost: 0, linesearch_cost: 3.227, update_cost: 0, checkConverg_cost: 2.112
+iter: 38, total time: 457.433
+grad_cost: 0.938, hess_cost: 59.21, solver_cost: 391.847, collision_cost: 0, linesearch_cost: 3.284, update_cost: 0, checkConverg_cost: 2.154
+iter: 39, total time: 470.545
+grad_cost: 0.966, hess_cost: 60.93, solver_cost: 403.11, collision_cost: 0, linesearch_cost: 3.338, update_cost: 0, checkConverg_cost: 2.201
+iter: 40, total time: 483.778
+grad_cost: 0.986, hess_cost: 62.302, solver_cost: 414.852, collision_cost: 0, linesearch_cost: 3.395, update_cost: 0, checkConverg_cost: 2.243
+iter: 41, total time: 495.538
+grad_cost: 1.007, hess_cost: 63.884, solver_cost: 424.907, collision_cost: 0, linesearch_cost: 3.452, update_cost: 0, checkConverg_cost: 2.288
+iter: 42, total time: 508.677
+grad_cost: 1.038, hess_cost: 65.511, solver_cost: 436.249, collision_cost: 0, linesearch_cost: 3.526, update_cost: 0, checkConverg_cost: 2.353
+iter: 43, total time: 520.863
+grad_cost: 1.063, hess_cost: 66.948, solver_cost: 446.875, collision_cost: 0, linesearch_cost: 3.584, update_cost: 0, checkConverg_cost: 2.393
+iter: 44, total time: 531.606
+grad_cost: 1.087, hess_cost: 68.297, solver_cost: 456.146, collision_cost: 0, linesearch_cost: 3.642, update_cost: 0, checkConverg_cost: 2.434
+iter: 45, total time: 544.115
+grad_cost: 1.109, hess_cost: 69.986, solver_cost: 466.843, collision_cost: 0, linesearch_cost: 3.702, update_cost: 0, checkConverg_cost: 2.475
+iter: 46, total time: 556.537
+grad_cost: 1.13, hess_cost: 71.348, solver_cost: 477.766, collision_cost: 0, linesearch_cost: 3.77, update_cost: 0, checkConverg_cost: 2.523
+iter: 47, total time: 569.093
+grad_cost: 1.159, hess_cost: 72.896, solver_cost: 488.646, collision_cost: 0, linesearch_cost: 3.829, update_cost: 0, checkConverg_cost: 2.563
+iter: 48, total time: 581.611
+grad_cost: 1.183, hess_cost: 74.263, solver_cost: 499.673, collision_cost: 0, linesearch_cost: 3.885, update_cost: 0, checkConverg_cost: 2.607
+iter: 49, total time: 594.502
+grad_cost: 1.208, hess_cost: 75.768, solver_cost: 510.932, collision_cost: 0, linesearch_cost: 3.943, update_cost: 0, checkConverg_cost: 2.651
+iter: 50, total time: 607.01
+grad_cost: 1.23, hess_cost: 77.25, solver_cost: 521.79, collision_cost: 0, linesearch_cost: 4.033, update_cost: 0, checkConverg_cost: 2.707
+iter: 51, total time: 620.708
+grad_cost: 1.256, hess_cost: 78.7, solver_cost: 533.886, collision_cost: 0, linesearch_cost: 4.104, update_cost: 0, checkConverg_cost: 2.762
+iter: 52, total time: 635.413
+grad_cost: 1.284, hess_cost: 80.366, solver_cost: 546.779, collision_cost: 0, linesearch_cost: 4.169, update_cost: 0, checkConverg_cost: 2.815
+iter: 53, total time: 646.818
+grad_cost: 1.309, hess_cost: 81.932, solver_cost: 556.486, collision_cost: 0, linesearch_cost: 4.23, update_cost: 0, checkConverg_cost: 2.861
+iter: 54, total time: 659.068
+grad_cost: 1.334, hess_cost: 83.296, solver_cost: 567.247, collision_cost: 0, linesearch_cost: 4.289, update_cost: 0, checkConverg_cost: 2.902
+iter: 55, total time: 670.738
+grad_cost: 1.359, hess_cost: 84.644, solver_cost: 577.394, collision_cost: 0, linesearch_cost: 4.38, update_cost: 0, checkConverg_cost: 2.961
+iter: 56, total time: 682.089
+grad_cost: 1.382, hess_cost: 86.352, solver_cost: 586.916, collision_cost: 0, linesearch_cost: 4.436, update_cost: 0, checkConverg_cost: 3.003
+iter: 57, total time: 694.789
+grad_cost: 1.405, hess_cost: 87.699, solver_cost: 598.144, collision_cost: 0, linesearch_cost: 4.494, update_cost: 0, checkConverg_cost: 3.047
+iter: 58, total time: 706.351
+grad_cost: 1.43, hess_cost: 89.281, solver_cost: 608, collision_cost: 0, linesearch_cost: 4.553, update_cost: 0, checkConverg_cost: 3.087
+iter: 59, total time: 719.264
+grad_cost: 1.456, hess_cost: 90.981, solver_cost: 619.083, collision_cost: 0, linesearch_cost: 4.612, update_cost: 0, checkConverg_cost: 3.132
+iter: 60, total time: 1024.16
+grad_cost: 1.489, hess_cost: 92.09, solver_cost: 922.566, collision_cost: 0, linesearch_cost: 4.839, update_cost: 0, checkConverg_cost: 3.177
+iter: 61, total time: 1036.05
+grad_cost: 1.517, hess_cost: 93.199, solver_cost: 933.106, collision_cost: 0, linesearch_cost: 5.014, update_cost: 0, checkConverg_cost: 3.219
+iter: 62, total time: 1049.12
+grad_cost: 1.542, hess_cost: 94.413, solver_cost: 944.765, collision_cost: 0, linesearch_cost: 5.14, update_cost: 0, checkConverg_cost: 3.259
+iter: 63, total time: 1060.9
+grad_cost: 1.565, hess_cost: 95.585, solver_cost: 955.245, collision_cost: 0, linesearch_cost: 5.204, update_cost: 0, checkConverg_cost: 3.302
+iter: 64, total time: 1081.61
+grad_cost: 1.587, hess_cost: 96.606, solver_cost: 974.669, collision_cost: 0, linesearch_cost: 5.398, update_cost: 0, checkConverg_cost: 3.351
+iter: 65, total time: 1095.19
+grad_cost: 1.609, hess_cost: 97.645, solver_cost: 986.979, collision_cost: 0, linesearch_cost: 5.566, update_cost: 0, checkConverg_cost: 3.391
+iter: 66, total time: 1105.89
+grad_cost: 1.632, hess_cost: 98.68, solver_cost: 996.45, collision_cost: 0, linesearch_cost: 5.685, update_cost: 0, checkConverg_cost: 3.442
+iter: 67, total time: 1117.75
+grad_cost: 1.655, hess_cost: 99.719, solver_cost: 1007.03, collision_cost: 0, linesearch_cost: 5.865, update_cost: 0, checkConverg_cost: 3.484
+iter: 68, total time: 1129.48
+grad_cost: 1.675, hess_cost: 100.824, solver_cost: 1017.38, collision_cost: 0, linesearch_cost: 6.072, update_cost: 0, checkConverg_cost: 3.53
+iter: 69, total time: 1140.1
+grad_cost: 1.697, hess_cost: 101.873, solver_cost: 1026.73, collision_cost: 0, linesearch_cost: 6.238, update_cost: 0, checkConverg_cost: 3.571
+iter: 70, total time: 1152.47
+grad_cost: 1.717, hess_cost: 102.956, solver_cost: 1037.88, collision_cost: 0, linesearch_cost: 6.299, update_cost: 0, checkConverg_cost: 3.618
+iter: 71, total time: 1163.49
+grad_cost: 1.742, hess_cost: 104.135, solver_cost: 1047.45, collision_cost: 0, linesearch_cost: 6.497, update_cost: 0, checkConverg_cost: 3.67
+iter: 72, total time: 1174.85
+grad_cost: 1.763, hess_cost: 105.411, solver_cost: 1057.41, collision_cost: 0, linesearch_cost: 6.556, update_cost: 0, checkConverg_cost: 3.712
+iter: 73, total time: 1186.54
+grad_cost: 1.783, hess_cost: 106.434, solver_cost: 1067.85, collision_cost: 0, linesearch_cost: 6.718, update_cost: 0, checkConverg_cost: 3.755
+iter: 74, total time: 1196.86
+grad_cost: 1.811, hess_cost: 107.499, solver_cost: 1076.95, collision_cost: 0, linesearch_cost: 6.785, update_cost: 0, checkConverg_cost: 3.809
+iter: 75, total time: 1208.72
+grad_cost: 1.834, hess_cost: 108.587, solver_cost: 1087.49, collision_cost: 0, linesearch_cost: 6.958, update_cost: 0, checkConverg_cost: 3.853
+iter: 76, total time: 1219.94
+grad_cost: 1.856, hess_cost: 109.606, solver_cost: 1097.5, collision_cost: 0, linesearch_cost: 7.075, update_cost: 0, checkConverg_cost: 3.9
+iter: 77, total time: 1230.81
+grad_cost: 1.888, hess_cost: 110.922, solver_cost: 1106.81, collision_cost: 0, linesearch_cost: 7.245, update_cost: 0, checkConverg_cost: 3.943
+iter: 78, total time: 1242.61
+grad_cost: 1.909, hess_cost: 112.061, solver_cost: 1117.3, collision_cost: 0, linesearch_cost: 7.357, update_cost: 0, checkConverg_cost: 3.985
+iter: 79, total time: 1253.15
+grad_cost: 1.93, hess_cost: 113.104, solver_cost: 1126.62, collision_cost: 0, linesearch_cost: 7.471, update_cost: 0, checkConverg_cost: 4.026
+iter: 80, total time: 1264.94
+grad_cost: 1.95, hess_cost: 114.19, solver_cost: 1137.09, collision_cost: 0, linesearch_cost: 7.638, update_cost: 0, checkConverg_cost: 4.066
+iter: 81, total time: 1276.9
+grad_cost: 1.972, hess_cost: 115.33, solver_cost: 1147.67, collision_cost: 0, linesearch_cost: 7.809, update_cost: 0, checkConverg_cost: 4.117
+iter: 82, total time: 1287.68
+grad_cost: 1.999, hess_cost: 116.48, solver_cost: 1157.07, collision_cost: 0, linesearch_cost: 7.976, update_cost: 0, checkConverg_cost: 4.157
+iter: 83, total time: 1299.21
+grad_cost: 2.022, hess_cost: 117.5, solver_cost: 1167.45, collision_cost: 0, linesearch_cost: 8.033, update_cost: 0, checkConverg_cost: 4.201
+iter: 84, total time: 1488.53
+grad_cost: 2.043, hess_cost: 118.606, solver_cost: 1355.4, collision_cost: 0, linesearch_cost: 8.237, update_cost: 0, checkConverg_cost: 4.243
+iter: 85, total time: 1500.31
+grad_cost: 2.066, hess_cost: 119.636, solver_cost: 1366.03, collision_cost: 0, linesearch_cost: 8.296, update_cost: 0, checkConverg_cost: 4.284
+iter: 86, total time: 1510.77
+grad_cost: 2.087, hess_cost: 120.68, solver_cost: 1375.33, collision_cost: 0, linesearch_cost: 8.353, update_cost: 0, checkConverg_cost: 4.326
+iter: 87, total time: 1522.43
+grad_cost: 2.109, hess_cost: 121.87, solver_cost: 1385.66, collision_cost: 0, linesearch_cost: 8.415, update_cost: 0, checkConverg_cost: 4.372
+iter: 88, total time: 1533.87
+grad_cost: 2.136, hess_cost: 122.909, solver_cost: 1395.87, collision_cost: 0, linesearch_cost: 8.529, update_cost: 0, checkConverg_cost: 4.427
+iter: 89, total time: 1544.3
+grad_cost: 2.163, hess_cost: 123.962, solver_cost: 1405.03, collision_cost: 0, linesearch_cost: 8.667, update_cost: 0, checkConverg_cost: 4.476
+iter: 90, total time: 1555.87
+grad_cost: 2.183, hess_cost: 124.984, solver_cost: 1415.46, collision_cost: 0, linesearch_cost: 8.724, update_cost: 0, checkConverg_cost: 4.521
+iter: 91, total time: 1566.63
+grad_cost: 2.204, hess_cost: 126.004, solver_cost: 1424.95, collision_cost: 0, linesearch_cost: 8.897, update_cost: 0, checkConverg_cost: 4.576
+iter: 92, total time: 1579.11
+grad_cost: 2.226, hess_cost: 127.277, solver_cost: 1436.03, collision_cost: 0, linesearch_cost: 8.964, update_cost: 0, checkConverg_cost: 4.621
+iter: 93, total time: 1591.91
+grad_cost: 2.252, hess_cost: 128.464, solver_cost: 1447.42, collision_cost: 0, linesearch_cost: 9.109, update_cost: 0, checkConverg_cost: 4.666
+iter: 94, total time: 1602.35
+grad_cost: 2.275, hess_cost: 129.566, solver_cost: 1456.64, collision_cost: 0, linesearch_cost: 9.164, update_cost: 0, checkConverg_cost: 4.706
+iter: 95, total time: 1614.29
+grad_cost: 2.301, hess_cost: 130.752, solver_cost: 1467.19, collision_cost: 0, linesearch_cost: 9.3, update_cost: 0, checkConverg_cost: 4.749
+iter: 96, total time: 1625.61
+grad_cost: 2.324, hess_cost: 131.775, solver_cost: 1477.36, collision_cost: 0, linesearch_cost: 9.358, update_cost: 0, checkConverg_cost: 4.791
+iter: 97, total time: 1636.19
+grad_cost: 2.346, hess_cost: 132.833, solver_cost: 1486.71, collision_cost: 0, linesearch_cost: 9.467, update_cost: 0, checkConverg_cost: 4.831
+iter: 98, total time: 1648.1
+grad_cost: 2.367, hess_cost: 133.944, solver_cost: 1497.38, collision_cost: 0, linesearch_cost: 9.525, update_cost: 0, checkConverg_cost: 4.882
+iter: 99, total time: 1660.06
+grad_cost: 2.389, hess_cost: 135.052, solver_cost: 1508.11, collision_cost: 0, linesearch_cost: 9.584, update_cost: 0, checkConverg_cost: 4.926
+iter: 100, total time: 1672.09
+grad_cost: 2.484, hess_cost: 136.637, solver_cost: 1518.35, collision_cost: 0, linesearch_cost: 9.645, update_cost: 0, checkConverg_cost: 4.969
+iter: 101, total time: 1684.33
+grad_cost: 2.508, hess_cost: 137.766, solver_cost: 1529.34, collision_cost: 0, linesearch_cost: 9.705, update_cost: 0, checkConverg_cost: 5.017
+iter: 102, total time: 1695.52
+grad_cost: 2.53, hess_cost: 138.82, solver_cost: 1539.27, collision_cost: 0, linesearch_cost: 9.833, update_cost: 0, checkConverg_cost: 5.059
+iter: 103, total time: 1708.52
+grad_cost: 2.56, hess_cost: 140.051, solver_cost: 1550.9, collision_cost: 0, linesearch_cost: 9.896, update_cost: 0, checkConverg_cost: 5.115
+iter: 104, total time: 1722.13
+grad_cost: 2.585, hess_cost: 141.179, solver_cost: 1563.18, collision_cost: 0, linesearch_cost: 10.02, update_cost: 0, checkConverg_cost: 5.174
+iter: 105, total time: 1732.63
+grad_cost: 2.607, hess_cost: 142.217, solver_cost: 1572.51, collision_cost: 0, linesearch_cost: 10.076, update_cost: 0, checkConverg_cost: 5.217
+iter: 106, total time: 1744.24
+grad_cost: 2.628, hess_cost: 143.213, solver_cost: 1583.01, collision_cost: 0, linesearch_cost: 10.13, update_cost: 0, checkConverg_cost: 5.262
+iter: 107, total time: 1754.74
+grad_cost: 2.649, hess_cost: 144.278, solver_cost: 1592.3, collision_cost: 0, linesearch_cost: 10.202, update_cost: 0, checkConverg_cost: 5.313

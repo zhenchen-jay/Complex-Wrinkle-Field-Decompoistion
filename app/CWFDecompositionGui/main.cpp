@@ -35,6 +35,97 @@
 
 #include <CLI/CLI.hpp>
 
+
+#include <igl/triangle/triangulate.h>
+void generateShearingCase()
+{
+	Eigen::MatrixXd planeV(4, 2);
+	Eigen::MatrixXi planeE(4, 2);
+	planeV << 0, 0,
+		2, 0,
+		2, 1,
+		0, 1;
+	planeE << 0, 1,
+		1, 2,
+		2, 3,
+		3, 0;
+
+	Eigen::MatrixXd V2d;
+	Eigen::MatrixXi F;
+	Eigen::MatrixXi H(0, 2);
+	const std::string flags = "q20a" + std::to_string(0.005);
+	igl::triangle::triangulate(planeV, planeE, H, flags, V2d, F);
+
+	Eigen::MatrixXd triV, shearingV, upTriV, upShearingV;
+	Eigen::MatrixXi triF, upF;
+
+	triV.resize(V2d.rows(), 3);
+	triV.setZero();
+	triV.block(0, 0, triV.rows(), 2) = V2d;
+	triF = F;
+	
+	shearingV = triV;
+	for (int i = 0; i < shearingV.rows(); i++)
+		shearingV(i, 0) = triV(i, 0) + 0.2 * triV(i, 1);
+
+	std::string curDir = std::filesystem::current_path().string();
+	std::cout << "curDir: " << curDir << std::endl;
+	igl::writeOBJ(curDir + "/restCoarseRect.obj", triV, triF);
+	igl::writeOBJ(curDir + "/baseCoarseRect.obj", shearingV, triF);
+
+	// upsampling
+	Mesh triMesh;
+	triMesh.Populate(triV, triF);
+	std::shared_ptr<BaseLoop> loopOp = std::make_shared<ComplexLoop>();
+	loopOp->SetBndFixFlag(true);
+	loopOp->SetMesh(triMesh);
+	Mesh upMesh = loopOp->meshSubdivide(3);
+
+	upTriV = upMesh.GetPos();
+	upF = upMesh.GetFace();
+	upShearingV = upTriV;
+
+	Eigen::MatrixXd perturb = upShearingV;
+	perturb.setRandom();
+	perturb.col(0).setZero();
+	perturb.col(1).setZero();
+	// clamped vertices
+	Eigen::VectorXi bnds;
+	igl::boundary_loop(upF, bnds);
+	for (int i = 0; i < bnds.rows(); i++)
+	{
+		perturb(bnds[i], 2) = 0;
+	}
+
+	upShearingV = upShearingV + 1e-4 * perturb;
+
+	for (int i = 0; i < upShearingV.rows(); i++)
+		upShearingV(i, 0) = upTriV(i, 0) + 0.2 * upTriV(i, 1);
+
+	igl::writeOBJ(curDir + "/restFineRect.obj", upTriV, upF);
+	igl::writeOBJ(curDir + "/baseFineRect.obj", upShearingV, upF);
+
+	
+	std::string path = curDir + "/restFineRect_clamped_vertices.dat";
+	std::ofstream ofs(path);
+	ofs << bnds.rows() << std::endl;
+	ofs << '#' << std::endl;
+	for (int i = 0; i < bnds.rows(); i++)
+	{
+		ofs << bnds[i] << " " << upShearingV.row(bnds[i]) << std::endl;
+	}
+
+	igl::boundary_loop(triF, bnds);
+	path = curDir + "/restCoarseRect_clamped_vertices.dat";
+	ofs = std::ofstream(path);
+	ofs << bnds.rows() << std::endl;
+	ofs << '#' << std::endl;
+	for (int i = 0; i < bnds.rows(); i++)
+	{
+		ofs << bnds[i] << " " << triV.row(bnds[i]) << std::endl;
+	}
+}
+
 MatrixX triV, upV, refUpV, wrinkledV, refWrinkledV;
 Eigen::MatrixXi triF, upF, refUpF, wrinkledF;
 Mesh baseMesh, upMesh, refUpMesh;
@@ -362,6 +453,9 @@ void callback() {
 
 int main(int argc, char** argv)
 {
+	generateShearingCase();
+	return 0;
+
 	std::string inputFile = "";
 	CLI::App app("Wrinkle Upsampling");
 	app.add_option("input,-i,--input", inputFile, "Input model")->check(CLI::ExistingFile);

@@ -1,0 +1,321 @@
+iter: 1, total time: 10.483
+line search rate: 0.758312, actual hessian: false, reg: 0.430103902372236
+f_old: 14.38688512386528, f_new: 14.29812570751691, delta_f : 0.0887594163483687, ||grad||_inf : 4.998247985571274, ||dir||_inf : 5e-07
+iter: 2, total time: 20.834
+line search rate: 0.229531, actual hessian: false, reg: 0.5743721838617111
+f_old: 14.29812570751691, f_new: 13.68641443445166, delta_f : 0.6117112730652519, ||grad||_inf : 3.902850626096152, ||dir||_inf : 2.5e-07
+iter: 3, total time: 31.703
+line search rate: 0.428708, actual hessian: false, reg: 0.2129842998807112
+f_old: 13.68641443445166, f_new: 12.82818801550711, delta_f : 0.8582264189445556, ||grad||_inf : 2.366434391205887, ||dir||_inf : 1.25e-07
+iter: 4, total time: 43.735
+line search rate: 0.757555, actual hessian: false, reg: 0.1109719363360961
+f_old: 12.82818801550711, f_new: 12.44594262769285, delta_f : 0.3822453878142564, ||grad||_inf : 0.8040819620095017, ||dir||_inf : 6.25e-08
+iter: 5, total time: 54.32
+line search rate: 1, actual hessian: false, reg: 0.06146259414332633
+f_old: 12.44594262769285, f_new: 12.38431360398422, delta_f : 0.06162902370863321, ||grad||_inf : 0.1886167038196947, ||dir||_inf : 3.125e-08
+iter: 6, total time: 64.625
+line search rate: 0.893021, actual hessian: false, reg: 0.09119881005028012
+f_old: 12.38431360398422, f_new: 12.37388663861784, delta_f : 0.01042696536637955, ||grad||_inf : 0.1921268521061294, ||dir||_inf : 1.5625e-08
+iter: 7, total time: 75.106
+line search rate: 1, actual hessian: false, reg: 0.06373850430094567
+f_old: 12.37388663861784, f_new: 12.36685849337607, delta_f : 0.007028145241761763, ||grad||_inf : 0.09174001434467291, ||dir||_inf : 7.8125e-09
+iter: 8, total time: 85.771
+line search rate: 0.857452, actual hessian: false, reg: 0.05853136573790644
+f_old: 12.36685849337607, f_new: 12.36374732336547, delta_f : 0.003111170010608788, ||grad||_inf : 0.1912746273184068, ||dir||_inf : 3.90625e-09
+iter: 9, total time: 96.349
+line search rate: 1, actual hessian: false, reg: 0.0507224778513083
+f_old: 12.36374732336547, f_new: 12.36105837004099, delta_f : 0.002688953324474497, ||grad||_inf : 0.06351032965444284, ||dir||_inf : 1.953125e-09
+iter: 10, total time: 108.408
+line search rate: 0.863705, actual hessian: false, reg: 0.05533102019355597
+f_old: 12.36105837004099, f_new: 12.35979963207548, delta_f : 0.001258737965514456, ||grad||_inf : 0.1658481093430684, ||dir||_inf : 9.765625e-10
+iter: 11, total time: 120.828
+line search rate: 1, actual hessian: false, reg: 0.03475779667325001
+f_old: 12.35979963207548, f_new: 12.35856244475749, delta_f : 0.001237187317984834, ||grad||_inf : 0.04679501109071194, ||dir||_inf : 4.8828125e-10
+iter: 12, total time: 131.585
+line search rate: 1, actual hessian: false, reg: 0.04015107415176011
+f_old: 12.35856244475749, f_new: 12.35782016778552, delta_f : 0.0007422769719696021, ||grad||_inf : 0.1098968352431341, ||dir||_inf : 2.44140625e-10
+iter: 13, total time: 143.716
+line search rate: 1, actual hessian: false, reg: 0.03261351139519583
+f_old: 12.35782016778552, f_new: 12.35721660318803, delta_f : 0.000603564597495776, ||grad||_inf : 0.06361560105471535, ||dir||_inf : 1.220703125e-10
+iter: 14, total time: 154.769
+line search rate: 1, actual hessian: false, reg: 0.02993227678967035
+f_old: 12.35721660318803, f_new: 12.35672511661913, delta_f : 0.0004914865688956382, ||grad||_inf : 0.02362231057763666, ||dir||_inf : 6.103515625e-11
+iter: 15, total time: 166.471
+line search rate: 1, actual hessian: false, reg: 0.02473776922166009
+f_old: 12.35672511661913, f_new: 12.35636967642168, delta_f : 0.0003554401974561472, ||grad||_inf : 0.02411429594519608, ||dir||_inf : 3.0517578125e-11
+iter: 16, total time: 180.822
+line search rate: 1, actual hessian: false, reg: 0.02126218504543222
+f_old: 12.35636967642168, f_new: 12.35606606543085, delta_f : 0.0003036109908247653, ||grad||_inf : 0.008553049443291848, ||dir||_inf : 1.52587890625e-11
+iter: 17, total time: 192.043
+line search rate: 1, actual hessian: false, reg: 0.01596547486134259
+f_old: 12.35606606543085, f_new: 12.35581556482608, delta_f : 0.0002505006047712754, ||grad||_inf : 0.008576609977059361, ||dir||_inf : 7.62939453125e-12
+iter: 18, total time: 204.594
+line search rate: 1, actual hessian: false, reg: 0.01626753207558907
+f_old: 12.35581556482608, f_new: 12.35559836208752, delta_f : 0.0002172027385540787, ||grad||_inf : 0.008252070571621702, ||dir||_inf : 3.814697265625e-12
+iter: 19, total time: 217.154
+line search rate: 1, actual hessian: false, reg: 0.0165407376746764
+f_old: 12.35559836208752, f_new: 12.35540859822042, delta_f : 0.0001897638671088941, ||grad||_inf : 0.007607023718773578, ||dir||_inf : 1.9073486328125e-12
+iter: 20, total time: 230.213
+line search rate: 1, actual hessian: false, reg: 0.01620247060516148
+f_old: 12.35540859822042, f_new: 12.35523984596929, delta_f : 0.0001687522511293338, ||grad||_inf : 0.006748145700474454, ||dir||_inf : 9.5367431640625e-13
+iter: 21, total time: 243.338
+line search rate: 1, actual hessian: false, reg: 0.0155849223522098
+f_old: 12.35523984596929, f_new: 12.35508874074909, delta_f : 0.0001511052201994545, ||grad||_inf : 0.005802158731546501, ||dir||_inf : 4.76837158203125e-13
+iter: 22, total time: 254.362
+line search rate: 1, actual hessian: false, reg: 0.01402410812841885
+f_old: 12.35508874074909, f_new: 12.35495307316345, delta_f : 0.0001356675856332146, ||grad||_inf : 0.004939417281858937, ||dir||_inf : 2.384185791015625e-13
+iter: 23, total time: 266.521
+line search rate: 1, actual hessian: false, reg: 0.01273770971466708
+f_old: 12.35495307316345, f_new: 12.35483173301463, delta_f : 0.0001213401488229238, ||grad||_inf : 0.004280413675320763, ||dir||_inf : 1.192092895507812e-13
+iter: 24, total time: 278.404
+line search rate: 1, actual hessian: false, reg: 0.0122718080826161
+f_old: 12.35483173301463, f_new: 12.35472392708688, delta_f : 0.0001078059277492827, ||grad||_inf : 0.003857825328691349, ||dir||_inf : 5.960464477539062e-14
+iter: 25, total time: 289.946
+line search rate: 1, actual hessian: false, reg: 0.01366193138273251
+f_old: 12.35472392708688, f_new: 12.35462859646125, delta_f : 9.533062563527039e-05, ||grad||_inf : 0.003776206302359531, ||dir||_inf : 2.980232238769531e-14
+iter: 26, total time: 302.371
+line search rate: 1, actual hessian: false, reg: 0.01611150146326652
+f_old: 12.35462859646125, f_new: 12.35454425708893, delta_f : 8.43393723179986e-05, ||grad||_inf : 0.004250113754641285, ||dir||_inf : 1.490116119384766e-14
+iter: 27, total time: 313.633
+line search rate: 1, actual hessian: false, reg: 0.01818827856478116
+f_old: 12.35454425708893, f_new: 12.35446927000334, delta_f : 7.498708558628664e-05, ||grad||_inf : 0.004746696898967145, ||dir||_inf : 7.450580596923828e-15
+iter: 28, total time: 326.076
+line search rate: 1, actual hessian: false, reg: 0.01680693494441709
+f_old: 12.35446927000334, f_new: 12.35440217853504, delta_f : 6.709146830097268e-05, ||grad||_inf : 0.004648628837339463, ||dir||_inf : 3.725290298461914e-15
+iter: 29, total time: 338.351
+line search rate: 1, actual hessian: false, reg: 0.01624213224739196
+f_old: 12.35440217853504, f_new: 12.35434182423697, delta_f : 6.035429807127457e-05, ||grad||_inf : 0.003932119075991793, ||dir||_inf : 1.862645149230957e-15
+iter: 30, total time: 349.499
+line search rate: 1, actual hessian: false, reg: 0.01638048574423762
+f_old: 12.35434182423697, f_new: 12.35428726799119, delta_f : 5.455624578409868e-05, ||grad||_inf : 0.0035547047875554, ||dir||_inf : 9.313225746154785e-16
+iter: 31, total time: 363.656
+line search rate: 1, actual hessian: false, reg: 0.01641147012429468
+f_old: 12.35428726799119, f_new: 12.35423769393843, delta_f : 4.957405275263227e-05, ||grad||_inf : 0.003405876105536994, ||dir||_inf : 4.656612873077392e-16
+iter: 32, total time: 376.489
+line search rate: 1, actual hessian: false, reg: 0.01601319388723355
+f_old: 12.35423769393843, f_new: 12.3541923897664, delta_f : 4.530417203163495e-05, ||grad||_inf : 0.003265180845682478, ||dir||_inf : 2.328306436538696e-16
+iter: 33, total time: 390.041
+line search rate: 1, actual hessian: false, reg: 0.01483406454776091
+f_old: 12.3541923897664, f_new: 12.35415075863743, delta_f : 4.163112897437315e-05, ||grad||_inf : 0.003113483268771114, ||dir||_inf : 1.164153218269348e-16
+iter: 34, total time: 404.665
+line search rate: 1, actual hessian: false, reg: 0.01344208795072796
+f_old: 12.35415075863743, f_new: 12.35411231552011, delta_f : 3.844311731526773e-05, ||grad||_inf : 0.002955278056413968, ||dir||_inf : 1e-16
+iter: 35, total time: 417.975
+line search rate: 1, actual hessian: false, reg: 0.0122834494706381
+f_old: 12.35411231552011, f_new: 12.35407666812284, delta_f : 3.564739727046629e-05, ||grad||_inf : 0.002794526584746512, ||dir||_inf : 1e-16
+iter: 36, total time: 429.751
+line search rate: 1, actual hessian: false, reg: 0.01117843504546865
+f_old: 12.35407666812284, f_new: 12.35404349356908, delta_f : 3.317455375828615e-05, ||grad||_inf : 0.002634537219292524, ||dir||_inf : 1e-16
+iter: 37, total time: 445.048
+line search rate: 1, actual hessian: false, reg: 0.009735676954041138
+f_old: 12.35404349356908, f_new: 12.35401251896649, delta_f : 3.097460259304796e-05, ||grad||_inf : 0.002477915478814805, ||dir||_inf : 1e-16
+iter: 38, total time: 457.433
+line search rate: 1, actual hessian: false, reg: 0.008420469149715986
+f_old: 12.35401251896649, f_new: 12.35398350788473, delta_f : 2.901108175734635e-05, ||grad||_inf : 0.00232660551393014, ||dir||_inf : 1e-16
+iter: 39, total time: 470.545
+line search rate: 1, actual hessian: false, reg: 0.007397861722466539
+f_old: 12.35398350788473, f_new: 12.35395625032944, delta_f : 2.725755529553453e-05, ||grad||_inf : 0.002181975144315693, ||dir||_inf : 1e-16
+iter: 40, total time: 483.778
+line search rate: 1, actual hessian: false, reg: 0.006814329399702345
+f_old: 12.35395625032944, f_new: 12.35393055580225, delta_f : 2.569452719036747e-05, ||grad||_inf : 0.00204488849276525, ||dir||_inf : 1e-16
+iter: 41, total time: 495.538
+line search rate: 1, actual hessian: false, reg: 0.006508860402812809
+f_old: 12.35393055580225, f_new: 12.35390624809216, delta_f : 2.430771008654631e-05, ||grad||_inf : 0.002232705610098742, ||dir||_inf : 1e-16
+iter: 42, total time: 508.677
+line search rate: 1, actual hessian: false, reg: 0.00645320189196645
+f_old: 12.35390624809216, f_new: 12.35388316158644, delta_f : 2.3086505720471e-05, ||grad||_inf : 0.002436052831762997, ||dir||_inf : 1e-16
+iter: 43, total time: 520.863
+line search rate: 1, actual hessian: false, reg: 0.006605076397487174
+f_old: 12.35388316158644, f_new: 12.35386114000566, delta_f : 2.202158078112859e-05, ||grad||_inf : 0.002637095327509939, ||dir||_inf : 1e-16
+iter: 44, total time: 531.606
+line search rate: 1, actual hessian: false, reg: 0.007013636460829998
+f_old: 12.35386114000566, f_new: 12.35384003793626, delta_f : 2.110206939676118e-05, ||grad||_inf : 0.002823511926720266, ||dir||_inf : 1e-16
+iter: 45, total time: 544.115
+line search rate: 1, actual hessian: false, reg: 0.007810743760158085
+f_old: 12.35384003793626, f_new: 12.35381972576856, delta_f : 2.03121677042617e-05, ||grad||_inf : 0.002979660834772809, ||dir||_inf : 1e-16
+iter: 46, total time: 556.537
+line search rate: 1, actual hessian: false, reg: 0.008462398985822886
+f_old: 12.35381972576856, f_new: 12.35380009811814, delta_f : 1.962765041874093e-05, ||grad||_inf : 0.003088285604937174, ||dir||_inf : 1e-16
+iter: 47, total time: 569.093
+line search rate: 1, actual hessian: false, reg: 0.008858695398764384
+f_old: 12.35380009811814, f_new: 12.35378108440958, delta_f : 1.901370856316476e-05, ||grad||_inf : 0.003133897889512126, ||dir||_inf : 1e-16
+iter: 48, total time: 581.611
+line search rate: 1, actual hessian: false, reg: 0.00890282389765657
+f_old: 12.35378108440958, f_new: 12.35376265809977, delta_f : 1.842630980419813e-05, ||grad||_inf : 0.003107470246540726, ||dir||_inf : 1e-16
+iter: 49, total time: 594.502
+line search rate: 1, actual hessian: false, reg: 0.008679389202405061
+f_old: 12.35376265809977, f_new: 12.35374483994975, delta_f : 1.781815002388498e-05, ||grad||_inf : 0.003009964311365176, ||dir||_inf : 1e-16
+iter: 50, total time: 607.01
+line search rate: 1, actual hessian: false, reg: 0.008269331008146886
+f_old: 12.35374483994975, f_new: 12.35372769102126, delta_f : 1.714892848880822e-05, ||grad||_inf : 0.002852477375568479, ||dir||_inf : 1e-16
+iter: 51, total time: 620.708
+line search rate: 1, actual hessian: false, reg: 0.008689643706057997
+f_old: 12.35372769102126, f_new: 12.35371129482949, delta_f : 1.639619177318252e-05, ||grad||_inf : 0.002652677170991574, ||dir||_inf : 1e-16
+iter: 52, total time: 635.413
+line search rate: 1, actual hessian: false, reg: 0.00906041555712016
+f_old: 12.35371129482949, f_new: 12.35369573444652, delta_f : 1.556038296257611e-05, ||grad||_inf : 0.002472141666289732, ||dir||_inf : 1e-16
+iter: 53, total time: 646.818
+line search rate: 1, actual hessian: false, reg: 0.009499392471913533
+f_old: 12.35369573444652, f_new: 12.35368107192948, delta_f : 1.466251704407284e-05, ||grad||_inf : 0.002410241736691413, ||dir||_inf : 1e-16
+iter: 54, total time: 659.068
+line search rate: 1, actual hessian: false, reg: 0.00953639697165067
+f_old: 12.35368107192948, f_new: 12.35366733599711, delta_f : 1.373593237374848e-05, ||grad||_inf : 0.00232452470695499, ||dir||_inf : 1e-16
+iter: 55, total time: 670.738
+line search rate: 1, actual hessian: false, reg: 0.01000989811135525
+f_old: 12.35366733599711, f_new: 12.35365451942927, delta_f : 1.281656783724827e-05, ||grad||_inf : 0.00219753288248973, ||dir||_inf : 1e-16
+iter: 56, total time: 682.089
+line search rate: 1, actual hessian: false, reg: 0.009794580979459802
+f_old: 12.35365451942927, f_new: 12.35364258396428, delta_f : 1.193546498789999e-05, ||grad||_inf : 0.002042372705041343, ||dir||_inf : 1e-16
+iter: 57, total time: 694.789
+line search rate: 1, actual hessian: false, reg: 0.008864274384873014
+f_old: 12.35364258396428, f_new: 12.35363146911803, delta_f : 1.111484625404557e-05, ||grad||_inf : 0.001871188181016153, ||dir||_inf : 1e-16
+iter: 58, total time: 706.351
+line search rate: 1, actual hessian: false, reg: 0.00848343146106186
+f_old: 12.35363146911803, f_new: 12.35362110205116, delta_f : 1.036706686186051e-05, ||grad||_inf : 0.001694061559092916, ||dir||_inf : 1e-16
+iter: 59, total time: 719.264
+line search rate: 1, actual hessian: false, reg: 0.008063341569223476
+f_old: 12.35362110205116, f_new: 12.35361140587137, delta_f : 9.696179795071203e-06, ||grad||_inf : 0.001518783678849126, ||dir||_inf : 1e-16
+iter: 60, total time: 1024.16
+line search rate: 0.0152058, actual hessian: true, reg: 0.03025875213867145
+f_old: 12.35361140587137, f_new: 12.3536071202456, delta_f : 4.285625765376722e-06, ||grad||_inf : 0.01934330993269845, ||dir||_inf : 0.1125899906842624
+iter: 61, total time: 1036.05
+line search rate: 0.322914, actual hessian: true, reg: 0.001590216756687495
+f_old: 12.3536071202456, f_new: 12.353578205668, delta_f : 2.891457759979232e-05, ||grad||_inf : 0.03166543342671811, ||dir||_inf : 0.0562949953421312
+iter: 62, total time: 1049.12
+line search rate: 0.912869, actual hessian: true, reg: 0.000657409695931916
+f_old: 12.353578205668, f_new: 12.35353832316971, delta_f : 3.988249829234292e-05, ||grad||_inf : 0.01794359906950117, ||dir||_inf : 0.0281474976710656
+iter: 63, total time: 1060.9
+line search rate: 1, actual hessian: true, reg: 0.0005579937059033861
+f_old: 12.35353832316971, f_new: 12.35350236110939, delta_f : 3.596206032518978e-05, ||grad||_inf : 0.02511824458205242, ||dir||_inf : 0.0140737488355328
+iter: 64, total time: 1081.61
+line search rate: 0.0229602, actual hessian: true, reg: 0.0146417599784833
+f_old: 12.35350236110939, f_new: 12.35350067215562, delta_f : 1.688953767953194e-06, ||grad||_inf : 0.02454181211349922, ||dir||_inf : 0.2251799813685248
+iter: 65, total time: 1095.19
+line search rate: 0.185602, actual hessian: true, reg: 0.002574860635898927
+f_old: 12.35350067215562, f_new: 12.35349518796323, delta_f : 5.484192390881049e-06, ||grad||_inf : 0.02824800842287864, ||dir||_inf : 0.2251799813685248
+iter: 66, total time: 1105.89
+line search rate: 0.840698, actual hessian: true, reg: 0.001093310272992224
+f_old: 12.35349518796323, f_new: 12.35346880453267, delta_f : 2.638343055849646e-05, ||grad||_inf : 0.0836852471433652, ||dir||_inf : 0.1125899906842624
+iter: 67, total time: 1117.75
+line search rate: 0.424915, actual hessian: true, reg: 0.00112745347711598
+f_old: 12.35346880453267, f_new: 12.35345011913908, delta_f : 1.868539358973464e-05, ||grad||_inf : 0.05652985491978115, ||dir||_inf : 0.0562949953421312
+iter: 68, total time: 1129.48
+line search rate: 0.100548, actual hessian: true, reg: 0.004393925057124987
+f_old: 12.35345011913908, f_new: 12.35344297282223, delta_f : 7.146316853834378e-06, ||grad||_inf : 0.05255662309888998, ||dir||_inf : 0.0281474976710656
+iter: 69, total time: 1140.1
+line search rate: 0.610559, actual hessian: true, reg: 0.0008982585291277261
+f_old: 12.35344297282223, f_new: 12.35340058180945, delta_f : 4.239101277292434e-05, ||grad||_inf : 0.1079039802502991, ||dir||_inf : 0.0140737488355328
+iter: 70, total time: 1152.47
+line search rate: 1, actual hessian: true, reg: 0.0004403337749009489
+f_old: 12.35340058180945, f_new: 12.3533333763458, delta_f : 6.72054636545738e-05, ||grad||_inf : 0.06724243903396081, ||dir||_inf : 0.0070368744177664
+iter: 71, total time: 1163.49
+line search rate: 0.458581, actual hessian: true, reg: 0.00121906848589381
+f_old: 12.3533333763458, f_new: 12.35328759920084, delta_f : 4.577714496178942e-05, ||grad||_inf : 0.1156356679565061, ||dir||_inf : 0.0035184372088832
+iter: 72, total time: 1174.85
+line search rate: 1, actual hessian: true, reg: 0.0008078661929622475
+f_old: 12.35328759920084, f_new: 12.35320764818975, delta_f : 7.995101108626557e-05, ||grad||_inf : 0.05252888153731011, ||dir||_inf : 0.0017592186044416
+iter: 73, total time: 1186.54
+line search rate: 0.55032, actual hessian: true, reg: 0.001974342197666943
+f_old: 12.35320764818975, f_new: 12.35316293693837, delta_f : 4.471125138216792e-05, ||grad||_inf : 0.05419372396166406, ||dir||_inf : 0.0008796093022208
+iter: 74, total time: 1196.86
+line search rate: 1, actual hessian: true, reg: 0.004112663479557702
+f_old: 12.35316293693837, f_new: 12.35309352740217, delta_f : 6.940953620038215e-05, ||grad||_inf : 0.04876346128793651, ||dir||_inf : 0.0004398046511104
+iter: 75, total time: 1208.72
+line search rate: 0.244253, actual hessian: true, reg: 0.008723578298491162
+f_old: 12.35309352740217, f_new: 12.35307296525526, delta_f : 2.056214690782099e-05, ||grad||_inf : 0.03791786478958982, ||dir||_inf : 0.0002199023255552
+iter: 76, total time: 1219.94
+line search rate: 1, actual hessian: true, reg: 0.01747334857624653
+f_old: 12.35307296525526, f_new: 12.35301404841506, delta_f : 5.891684019943e-05, ||grad||_inf : 0.03330200034217648, ||dir||_inf : 0.0001099511627776
+iter: 77, total time: 1230.81
+line search rate: 0.309727, actual hessian: true, reg: 0.03403635782921324
+f_old: 12.35301404841506, f_new: 12.35299632732557, delta_f : 1.772108949005258e-05, ||grad||_inf : 0.0337881855614471, ||dir||_inf : 5.49755813888e-05
+iter: 78, total time: 1242.61
+line search rate: 0.832363, actual hessian: true, reg: 0.06262635034357886
+f_old: 12.35299632732557, f_new: 12.35295874126536, delta_f : 3.758606020731747e-05, ||grad||_inf : 0.06207912310831306, ||dir||_inf : 2.74877906944e-05
+iter: 79, total time: 1253.15
+line search rate: 0.967193, actual hessian: true, reg: 0.1007110831811303
+f_old: 12.35295874126536, f_new: 12.35291940115811, delta_f : 3.9340107250041e-05, ||grad||_inf : 0.02379143334975819, ||dir||_inf : 1.37438953472e-05
+iter: 80, total time: 1264.94
+line search rate: 0.190541, actual hessian: true, reg: 0.1394399266061714
+f_old: 12.35291940115811, f_new: 12.35290761008688, delta_f : 1.179107123228107e-05, ||grad||_inf : 0.0422812117310935, ||dir||_inf : 6.8719476736e-06
+iter: 81, total time: 1276.9
+line search rate: 0.780632, actual hessian: true, reg: 0.1933014291978619
+f_old: 12.35290761008688, f_new: 12.35287538534415, delta_f : 3.22247427337885e-05, ||grad||_inf : 0.01660178141534557, ||dir||_inf : 3.4359738368e-06
+iter: 82, total time: 1287.68
+line search rate: 0.618412, actual hessian: true, reg: 0.1747275893737757
+f_old: 12.35287538534415, f_new: 12.3528528849419, delta_f : 2.250040224538452e-05, ||grad||_inf : 0.04341120205039028, ||dir||_inf : 1.7179869184e-06
+iter: 83, total time: 1299.21
+line search rate: 1, actual hessian: true, reg: 0.1275548561542482
+f_old: 12.3528528849419, f_new: 12.35282437702515, delta_f : 2.850791674902098e-05, ||grad||_inf : 0.01524166442772772, ||dir||_inf : 8.589934592e-07
+iter: 84, total time: 1488.53
+line search rate: 0.0732789, actual hessian: true, reg: 0.004673324095112349
+f_old: 12.35282437702515, f_new: 12.35282098662733, delta_f : 3.390397823821445e-06, ||grad||_inf : 0.03038576942681705, ||dir||_inf : 0.1125899906842624
+iter: 85, total time: 1500.31
+line search rate: 1, actual hessian: true, reg: 0.00044308157291073
+f_old: 12.35282098662733, f_new: 12.35280402619328, delta_f : 1.696043404564307e-05, ||grad||_inf : 0.02531071029600194, ||dir||_inf : 0.0562949953421312
+iter: 86, total time: 1510.77
+line search rate: 1, actual hessian: true, reg: 0.0005483915123247507
+f_old: 12.35280402619328, f_new: 12.3527902268847, delta_f : 1.379930858114164e-05, ||grad||_inf : 0.04360956635548979, ||dir||_inf : 0.0281474976710656
+iter: 87, total time: 1522.43
+line search rate: 1, actual hessian: true, reg: 0.0005078559400225526
+f_old: 12.3527902268847, f_new: 12.35277620666843, delta_f : 1.40202162750569e-05, ||grad||_inf : 0.00809794891684224, ||dir||_inf : 0.0140737488355328
+iter: 88, total time: 1533.87
+line search rate: 0.830435, actual hessian: true, reg: 0.0005202488832281952
+f_old: 12.35277620666843, f_new: 12.35276694578736, delta_f : 9.260881062900239e-06, ||grad||_inf : 0.02924178374402618, ||dir||_inf : 0.0070368744177664
+iter: 89, total time: 1544.3
+line search rate: 0.809125, actual hessian: true, reg: 0.0006098670407664438
+f_old: 12.35276694578736, f_new: 12.3527590033393, delta_f : 7.942448059239382e-06, ||grad||_inf : 0.007646340601411955, ||dir||_inf : 0.0035184372088832
+iter: 90, total time: 1555.87
+line search rate: 1, actual hessian: true, reg: 0.0003312825238376834
+f_old: 12.3527590033393, f_new: 12.35275136265949, delta_f : 7.640679811515838e-06, ||grad||_inf : 0.003459175052728399, ||dir||_inf : 0.0017592186044416
+iter: 91, total time: 1566.63
+line search rate: 0.467309, actual hessian: true, reg: 0.000906769266043016
+f_old: 12.35275136265949, f_new: 12.35274780583777, delta_f : 3.556821724259862e-06, ||grad||_inf : 0.005942977320679168, ||dir||_inf : 0.0008796093022208
+iter: 92, total time: 1579.11
+line search rate: 1, actual hessian: true, reg: 0.001109125499278077
+f_old: 12.35274780583777, f_new: 12.35274266838964, delta_f : 5.137448129133304e-06, ||grad||_inf : 0.001613451995760772, ||dir||_inf : 0.0004398046511104
+iter: 93, total time: 1591.91
+line search rate: 0.577414, actual hessian: true, reg: 0.002118045718014282
+f_old: 12.35274266838964, f_new: 12.35273985110393, delta_f : 2.817285709610928e-06, ||grad||_inf : 0.005180254558848733, ||dir||_inf : 0.0002199023255552
+iter: 94, total time: 1602.35
+line search rate: 1, actual hessian: true, reg: 0.004140588004122935
+f_old: 12.35273985110393, f_new: 12.35273635610509, delta_f : 3.494998839670416e-06, ||grad||_inf : 0.002018597397235126, ||dir||_inf : 0.0001099511627776
+iter: 95, total time: 1614.29
+line search rate: 0.598848, actual hessian: true, reg: 0.007507579760375202
+f_old: 12.35273635610509, f_new: 12.35273461190333, delta_f : 1.744201757247765e-06, ||grad||_inf : 0.003819902365242128, ||dir||_inf : 5.49755813888e-05
+iter: 96, total time: 1625.61
+line search rate: 1, actual hessian: true, reg: 0.01366118930300878
+f_old: 12.35273461190333, f_new: 12.35273235007724, delta_f : 2.261826097083031e-06, ||grad||_inf : 0.001248157802142967, ||dir||_inf : 2.74877906944e-05
+iter: 97, total time: 1636.19
+line search rate: 0.78982, actual hessian: true, reg: 0.02106121602276844
+f_old: 12.35273235007724, f_new: 12.35273102647236, delta_f : 1.323604875480555e-06, ||grad||_inf : 0.003106813290960683, ||dir||_inf : 1.37438953472e-05
+iter: 98, total time: 1648.1
+line search rate: 1, actual hessian: true, reg: 0.02997601732635494
+f_old: 12.35273102647236, f_new: 12.35272934762653, delta_f : 1.678845826802444e-06, ||grad||_inf : 0.001102901798795405, ||dir||_inf : 6.8719476736e-06
+iter: 99, total time: 1660.06
+line search rate: 1, actual hessian: true, reg: 0.03147322501928568
+f_old: 12.35272934762653, f_new: 12.35272814067323, delta_f : 1.206953305299407e-06, ||grad||_inf : 0.0007979911132189033, ||dir||_inf : 3.4359738368e-06
+iter: 100, total time: 1672.09
+line search rate: 1, actual hessian: true, reg: 0.02825133290170117
+f_old: 12.35272814067323, f_new: 12.35272743851895, delta_f : 7.02154283160894e-07, ||grad||_inf : 0.001710554203670162, ||dir||_inf : 1.7179869184e-06
+iter: 101, total time: 1684.33
+line search rate: 1, actual hessian: true, reg: 0.02154056556654161
+f_old: 12.35272743851895, f_new: 12.35272700306676, delta_f : 4.354521880856055e-07, ||grad||_inf : 0.0005125450458513438, ||dir||_inf : 8.589934592e-07
+iter: 102, total time: 1695.52
+line search rate: 0.639256, actual hessian: true, reg: 0.01390332788252771
+f_old: 12.35272700306676, f_new: 12.35272692482189, delta_f : 7.824486480956239e-08, ||grad||_inf : 0.0006048145211379377, ||dir||_inf : 4.294967296e-07
+iter: 103, total time: 1708.52
+line search rate: 1, actual hessian: true, reg: 0.01027939799995287
+f_old: 12.35272692482189, f_new: 12.35272687295057, delta_f : 5.187132501305314e-08, ||grad||_inf : 0.0003621414854671801, ||dir||_inf : 2.147483648e-07
+iter: 104, total time: 1722.13
+line search rate: 0.79224, actual hessian: true, reg: 0.003715024478086437
+f_old: 12.35272687295057, f_new: 12.35272686616374, delta_f : 6.78682887667037e-09, ||grad||_inf : 0.000121728503887306, ||dir||_inf : 1.073741824e-07
+iter: 105, total time: 1732.63
+line search rate: 1, actual hessian: true, reg: 0.001467757270998139
+f_old: 12.35272686616374, f_new: 12.35272686401237, delta_f : 2.151370637193395e-09, ||grad||_inf : 1.762603268443498e-05, ||dir||_inf : 5.36870912e-08
+iter: 106, total time: 1744.24
+line search rate: 1, actual hessian: true, reg: 0.0005174437670984226
+f_old: 12.35272686401237, f_new: 12.35272686383762, delta_f : 1.747437750054814e-10, ||grad||_inf : 4.934419683514047e-06, ||dir||_inf : 2.68435456e-08
+iter: 107, total time: 1754.74
+line search rate: 1, actual hessian: true, reg: 5.056696831709111e-05
+f_old: 12.35272686383762, f_new: 12.35272686383398, delta_f : 3.639755163931113e-12, ||grad||_inf : 3.425106693391903e-08, ||dir||_inf : 1.34217728e-08
