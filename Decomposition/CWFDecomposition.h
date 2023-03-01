@@ -36,14 +36,23 @@ public:
     void optimizeAmpOmega();
     void precomputationForPhase();
     void optimizePhase();
+    void precomptationForBaseMesh();
     void optimizeBasemesh();
 
+
+    // vertex phase update energies
     double computeDifferenceFromZvals(const ComplexVectorX& zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
     double computeCompatibilityEnergy(const VectorX& omega, const ComplexVectorX& zvals, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
     // compute compatibility between omega (_baseCWF.omega) and zvals
     double computeUnitNormEnergy(const ComplexVectorX& zval, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr, bool isProj = true);
 
     void testDifferenceFromZvals(const ComplexVectorX& zvals);
+
+    // base mesh update energies
+    double computeDifferenceFromBasemesh(const MatrixX& pos, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
+    VectorX flatMatrix(const MatrixX& x);
+    MatrixX unFlatVector(const VectorX& v, Eigen::Index cols);
+    void testDifferenceFromBasemesh(const MatrixX& pos);
 
 private:
     void convertCWF2Variables(VectorX& x);
@@ -79,7 +88,12 @@ private:
     // upsample Amp
     VectorX _upAmp;
 
-    // precomputations
+    // precomputations for phase
     SparseMatrixX _zvalDiffHess, _zvalCompHess;
     VectorX _zvalDiffCoeff;
+
+    // precomputations for basemesh
+    MatrixX _normalWrinkleUpdates;
+    SparseMatrixX _baseMeshDiffHess;
+    VectorX _baseMeshDiffCoeff;
 };

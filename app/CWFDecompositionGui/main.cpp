@@ -51,8 +51,9 @@ std::string workingFolder = "";
 int upsampleTimes = 0;
 double wrinkleAmpRatio = 1.0;
 
-float vecratio = 0.1;
+float vecratio = 0.01;
 bool isFixedBnd = false;
+double ampMax = 1;
 
 PaintGeometry mPaint;
 
@@ -70,8 +71,11 @@ int updateViewHelper(
 		polyscope::getSurfaceMesh("base mesh" + meshSuffix)->translate({ curShift * shiftx, shifty, 0 });
 	}
 
-	polyscope::getSurfaceMesh("base mesh" + meshSuffix)->addFaceVectorQuantity("frequency field", vecratio * baseFaceOmega, polyscope::VectorType::AMBIENT);
+	auto baseOmegaPatterns = polyscope::getSurfaceMesh("base mesh" + meshSuffix)->addFaceVectorQuantity("frequency field", vecratio * baseFaceOmega, polyscope::VectorType::AMBIENT);
+	baseOmegaPatterns->setEnabled(true);
 	auto baseAmpPatterns = polyscope::getSurfaceMesh("base mesh" + meshSuffix)->addVertexScalarQuantity("opt amplitude", baseAmplitude);
+	baseAmpPatterns->setMapRange({ 0, ampMax });
+	baseAmpPatterns->setColorMap("coolwarm");
 	baseAmpPatterns->setEnabled(true);
 
 	curShift++;
@@ -98,6 +102,8 @@ int updateViewHelper(
 	}
 
 	auto ampPatterns = polyscope::getSurfaceMesh("upsampled ampliude mesh" + meshSuffix)->addVertexScalarQuantity("vertex amplitude", upsampledAmplitude);
+	ampPatterns->setMapRange({ 0, ampMax });
+	ampPatterns->setColorMap("coolwarm");
 	ampPatterns->setEnabled(true);
 
 	curShift++;
@@ -119,6 +125,8 @@ void updateView(bool isFirstTime = true)
 {
 	double shiftx = 1.5 * (triV.col(0).maxCoeff() - triV.col(0).minCoeff());
 	double shifty = 1.5 * (triV.col(1).maxCoeff() - triV.col(1).minCoeff());
+
+	ampMax = std::max(std::max(std::max(refAmp.maxCoeff(), amp.maxCoeff()), refUpAmp.maxCoeff()), upAmp.maxCoeff());
 
 	int curShift = updateViewHelper(triV, triF, refUpV, refUpF, refWrinkledV, refAmp, refFaceOmega, refUpAmp, refUpPhase, refUpFaceOmega, shiftx, 0, "_ref", isFirstTime);
 
@@ -267,10 +275,8 @@ bool loadProblem(std::string loadFileName = "")
 	vertArea = getVertArea(baseMesh);
 	roundZvalsFromEdgeOmegaVertexMag(baseMesh, refOmega, refAmp, edgeArea, vertArea, nverts, refZvals);
 
-	//refAmp = amp;
-	//refOmega = omega;
-	//refZvals = zvals;
-
+	amp = refAmp;
+	omega = refOmega;
 	baseCWF = CWF(amp, omega, normalizeZvals(zvals), baseMesh);
 	baseRefCWF = CWF(refAmp, refOmega, normalizeZvals(refZvals), baseMesh);
 
@@ -337,7 +343,10 @@ void callback() {
 
 		CWFDecomposition decompModel(refWrinkledMesh);
 		decompModel.initialization(baseCWF, upsampleTimes);
+
 		decompModel.optimizePhase();
+		//decompModel.precomputationForPhase();
+		decompModel.optimizeBasemesh();
 		decompModel.getCWF(baseCWF);
 
 		ComplexVectorX unitZvals = baseCWF._zvals;
