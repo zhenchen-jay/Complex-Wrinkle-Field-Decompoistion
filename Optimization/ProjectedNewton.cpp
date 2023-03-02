@@ -48,6 +48,9 @@ void projectedNewtonSolver(std::function<double(const Eigen::VectorXd&, Eigen::V
 		Eigen::VectorXd projx = x;
 		for (int i = 0; i < DIM; i++)
 		{
+			if (lx[i] == std::numeric_limits<double>::min() || ux[i] == std::numeric_limits<double>::max())
+				continue;
+
 			if (projx[i] < lx[i])
 				projx[i] = lx[i];
 			if (projx[i] > ux[i])
@@ -109,6 +112,7 @@ void projectedNewtonSolver(std::function<double(const Eigen::VectorXd&, Eigen::V
 	totalTimer.start();
 	int i = 0;
 
+	auto x1 = x0;
 	x0 = bbxProj(x0);
 
 	double f = objFunc(x0, NULL, NULL, false);

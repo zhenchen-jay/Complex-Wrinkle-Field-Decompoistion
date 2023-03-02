@@ -16,6 +16,7 @@ static void quadS3(double w, std::vector<QuadraturePoints>& quadLists)
 	point.u = 1. / 3.;
 	point.v = 1. / 3.;
 	point.weight = w;
+	quadLists.push_back(point);
 }
 
 static void quadS21(double x, double w, std::vector<QuadraturePoints>& quadLists)
@@ -352,23 +353,20 @@ VectorX faceVec2IntrinsicEdgeVec(const MatrixX& v, const Mesh& mesh)
 {
 	int nedges = mesh.GetEdgeCount();
 	VectorX edgeOmega(nedges);
+	edgeOmega.setZero();
 
 	for (int i = 0; i < nedges; i++)
 	{
-		int fid0 = mesh.GetEdgeFaces(i)[0];
-		int fid1 = mesh.GetEdgeFaces(i)[1];
-
-		int vid0 = mesh.GetFaceVerts(i)[0];
-		int vid1 = mesh.GetFaceVerts(i)[1];
+		int vid0 = mesh.GetEdgeVerts(i)[0];
+		int vid1 = mesh.GetEdgeVerts(i)[1];
 
 		Eigen::Vector3d e = mesh.GetVertPos(vid1) - mesh.GetVertPos(vid0);
 
-		if (fid0 == -1)
-			edgeOmega(i) = v.row(fid1).dot(e);
-		else if (fid1 == -1)
-			edgeOmega(i) = v.row(fid0).dot(e);
-		else
-			edgeOmega(i) = (v.row(fid0) + v.row(fid1)).dot(e) / 2;
+		for (int j = 0; j < mesh.GetEdgeFaces(i).size(); j++)
+		{
+			int fid = mesh.GetEdgeFaces(i)[j];
+			edgeOmega(i) += v.row(fid).dot(e) / mesh.GetEdgeFaces(i).size();
+		}
 	}
 	return edgeOmega;
 }
@@ -401,7 +399,7 @@ MatrixX intrinsicEdgeVec2FaceVec(const VectorX& w, const Mesh& mesh)
 			int vid = mesh.GetFaceVerts(i)[j];
 
 			int eid0 = mesh.GetFaceEdges(i)[j];
-			int eid1 = mesh.GetFaceEdges(i)[(j + 2) % 2];
+			int eid1 = mesh.GetFaceEdges(i)[(j + 2) % 3];
 
 			Eigen::Vector3d e0 = mesh.GetVertPos(mesh.GetFaceVerts(i)[(j + 1) % 3]) - mesh.GetVertPos(vid);
 			Eigen::Vector3d e1 = mesh.GetVertPos(mesh.GetFaceVerts(i)[(j + 2) % 3]) - mesh.GetVertPos(vid);
@@ -435,6 +433,7 @@ MatrixX intrinsicEdgeVec2FaceVec(const VectorX& w, const Mesh& mesh)
 			Eigen::Vector2d sol = I.inverse() * rhs;
 
 			faceVec.row(i) += (sol(0) * e0 + sol(1) * e1) / 3;
+
 		}
 	}
 	return faceVec;

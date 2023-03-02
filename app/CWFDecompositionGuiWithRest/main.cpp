@@ -76,6 +76,10 @@ int updateViewHelper(
 		polyscope::registerSurfaceMesh(meshPreffix + "base mesh", basePos, baseFaces);
 		polyscope::getSurfaceMesh(meshPreffix + "base mesh")->translate({ curShift * shiftx, shifty, 0 });
 	}
+	else
+	{
+		polyscope::getSurfaceMesh(meshPreffix + "base mesh")->updateVertexPositions(basePos);
+	}
 
 	auto baseOmegaPatterns = polyscope::getSurfaceMesh(meshPreffix + "base mesh")->addFaceVectorQuantity("frequency field", vecratio * baseFaceOmega, polyscope::VectorType::AMBIENT);
 	baseOmegaPatterns->setEnabled(true);
@@ -91,6 +95,10 @@ int updateViewHelper(
 		polyscope::registerSurfaceMesh(meshPreffix + "upsampled phase mesh", upsampledPos, upsampledFaces);
 		polyscope::getSurfaceMesh(meshPreffix + "upsampled phase mesh")->translate({ curShift * shiftx, shifty, 0 });
 	}
+	else
+	{
+		polyscope::getSurfaceMesh(meshPreffix + "upsampled phase mesh")->updateVertexPositions(upsampledPos);
+	}
 
 	mPaint.setNormalization(false);
 	MatrixX phaseColor = mPaint.paintPhi(upsampledPhase);
@@ -105,6 +113,10 @@ int updateViewHelper(
 	{
 		polyscope::registerSurfaceMesh(meshPreffix + "upsampled ampliude mesh", upsampledPos, upsampledFaces);
 		polyscope::getSurfaceMesh(meshPreffix + "upsampled ampliude mesh")->translate({ curShift * shiftx, shifty, 0 });
+	}
+	else
+	{
+		polyscope::getSurfaceMesh(meshPreffix + "upsampled ampliude mesh")->updateVertexPositions(upsampledPos);
 	}
 
 	auto ampPatterns = polyscope::getSurfaceMesh(meshPreffix + "upsampled ampliude mesh")->addVertexScalarQuantity("vertex amplitude", upsampledAmplitude);
@@ -138,7 +150,11 @@ void updateView(bool isFirstTime = true)
 
 	curShift = updateViewHelper(optCWF._mesh.GetPos(), optCWF._mesh.GetFace(), optUpPos, upFaces, optWrinkledPos, optCWF._amp, optFaceOmega, upOptAmp, upOptPhase, optUpFaceOmega, shiftx, shifty, "opt ", isFirstTime);
 
-    std::cout << "init face omega: \n" << initFaceOmega << std::endl;
+	polyscope::registerSurfaceMesh("reference wrinkled mesh", wrinkledPos, wrinkledFaces);
+	polyscope::getSurfaceMesh("reference wrinkled mesh")->setSurfaceColor({ 80 / 255.0, 122 / 255.0, 91 / 255.0 });
+	polyscope::getSurfaceMesh("reference wrinkled mesh")->translate({ curShift * shiftx, 2 * shifty, 0 });
+
+	std::cout << "dist: " << (initWrinkledPos - wrinkledPos).norm() << ", after optimization: " << (optWrinkledPos - wrinkledPos).norm() << std::endl;
 }
 
 void subdivideMeshHelper(
@@ -310,6 +326,74 @@ bool loadProblem(std::string loadFileName = "")
         }
     }
 
+	// clamped vertices
+	bool isLoadClamp = true;
+	std::string clampedDOFFile = jval["clamped_vertices"];
+	std::ifstream ifs(workingFolder + clampedDOFFile);
+	std::unordered_set<int> clampedVerts = {};
+	if (!ifs)
+	{
+		std::cout << "Missing " << clampedDOFFile << std::endl;
+		isLoadClamp = false;
+	}
+	else
+	{
+		int nclamped;
+		ifs >> nclamped;
+		char dummy;
+		ifs >> dummy;
+		if (!ifs)
+		{
+			std::cout << "Error in " << clampedDOFFile << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		ifs.ignore(std::numeric_limits<int>::max(), '\n');
+		std::cout << "num of clamped DOFs: " << nclamped << std::endl;
+		for (int i = 0; i < nclamped; i++)
+		{
+			std::string line;
+			std::getline(ifs, line);
+			std::stringstream ss(line);
+
+			int vid;
+			ss >> vid;
+			if (!ss || vid < 0 || vid >= initCWF._mesh.GetVertCount())
+			{
+				std::cout << "Error in " << clampedDOFFile << ", vid overflow!" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			clampedVerts.insert(vid);
+			std::string x; // x, y, z
+			ss >> x;
+			if (!ss)
+			{
+				std::cout << "-using rest position for clamped vertices " << vid << std::endl;
+				for (int j = 0; j < 3; j++)
+				{
+					// should set clamped position
+				}
+			}
+			else
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					if (x[0] != '#')
+					{
+						// should set clamped position
+					}
+					ss >> x;
+				}
+			}
+		}
+
+		if (!ifs)
+		{
+			std::cout << "Error in " << clampedDOFFile << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+	
+
     // materials
     youngs = jval["Youngs_modulus"];
     poisson = jval["Poisson_ratio"];
@@ -324,7 +408,7 @@ bool loadProblem(std::string loadFileName = "")
     }
     else
     {
-        decompModel.initialization(upsampleTimes, isFixedBnd, restMesh, initCWF._mesh, restWrinkledMesh, wrinkledMesh, youngs, poisson, thickness);
+        decompModel.initialization(upsampleTimes, isFixedBnd, restMesh, initCWF._mesh, restWrinkledMesh, wrinkledMesh, youngs, poisson, thickness, clampedVerts);
         decompModel.getCWF(initCWF);
         optCWF = initCWF;
     }

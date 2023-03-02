@@ -4,6 +4,8 @@
 #include "../../Upsampling/BaseLoop.h"
 #include "../../TFWShell/TFWShell.h"
 
+#include <unordered_set>
+
 class CWFDecomposition
 {
 public:
@@ -30,17 +32,18 @@ public:
                         );
 
     void initialization(int upSampleTimes,
-                        bool isFixedBnd,                    // fixed bnd for loop
-                        const Mesh& restMesh,               // rest (coarse) mesh
-                        const Mesh& baseMesh,               // base (coarse) mesh
-                        const Mesh& restWrinkleMesh,        // rest (wrinkle) mesh
-                        const Mesh& wrinkledMesh,           // target wrinkle mesh (for decomposition)
-                        double youngsModulus,               // Young's Modulus
-                        double poissonRatio,                // Poisson's Ratio
-                        double thickness                    // thickness
+                        bool isFixedBnd,                            // fixed bnd for loop
+                        const Mesh& restMesh,                       // rest (coarse) mesh
+                        const Mesh& baseMesh,                       // base (coarse) mesh
+                        const Mesh& restWrinkleMesh,                // rest (wrinkle) mesh
+                        const Mesh& wrinkledMesh,                   // target wrinkle mesh (for decomposition)
+                        double youngsModulus,                       // Young's Modulus
+                        double poissonRatio,                        // Poisson's Ratio
+                        double thickness,                           // thickness
+                        const std::unordered_set<int>& clampedVert  // clamped vertices
     );
 
-    void initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess, Eigen::VectorXd& amp, Eigen::VectorXd& omega);
+    void initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess, Eigen::VectorXd& amp, Eigen::MatrixXd& faceOmega);
     /*
      * initialize amp and omega based on the compression amount.
      * REQUIRE: tfwshell has been initialized! (providing foundamental forms)
@@ -72,12 +75,7 @@ public:
     void testDifferenceFromBasemesh(const MatrixX& pos);
 
 private:
-    void convertCWF2Variables(VectorX& x);
-    void convertVariables2CWF(const VectorX& x);
-
-    void convertCWF2Variables(const CWF& cwf, VectorX& x);
-    void convertVariables2CWF(const VectorX& x, CWF& cwf);
-
+    void buildProjectionMat(const std::unordered_set<int>& clampedVerts, const MeshConnectivity& meshCon, int nverts);
     void updateWrinkleCompUpMat();
 
 
@@ -89,7 +87,8 @@ private:
 
     ComplexSparseMatrixX _upZMat;
     SparseMatrixX _wrinkleCompUpMat, _LoopS0;
-
+    
+    std::unordered_set<int> _clampedVertices;
     int _upsampleTimes;
 
     std::shared_ptr<BaseLoop> _subOp;       // somehow we may need take the differential in the future (really nasty)
@@ -105,12 +104,19 @@ private:
     // upsample Amp
     VectorX _upAmp;
 
+    // precomputations for amp omega
+    std::unordered_set<int> _clampedAmpOmega;
+    SparseMatrixX _projTFWMat;         // handle the fix verts
+    SparseMatrixX _unprojTFWMat;
+    int _nFreeAmp;
+    int _nFreeOmega;
+
     // precomputations for phase
     SparseMatrixX _zvalDiffHess, _zvalCompHess;
     VectorX _zvalDiffCoeff;
 
     // precomputations for basemesh
     MatrixX _normalWrinkleUpdates;
-    SparseMatrixX _baseMeshDiffHess;
+    SparseMatrixX _baseMeshDiffHess, _projPosMat, _unprojPosMat;
     VectorX _baseMeshDiffCoeff;
 };

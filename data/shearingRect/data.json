@@ -6,6 +6,7 @@
     "rest_mesh": "restMesh.obj",
     "wrinkled_mesh": "wrinkledMesh.obj",
     "rest_wrinkled_mesh": "restWrinkledMesh.obj", 
+    "clamped_vertices": "clamped_vertices.dat",
     "Youngs_modulus": 1e+07,
     "thickness": 1e-4,
     "Poisson_ratio": 0.44,
