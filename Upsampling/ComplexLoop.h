@@ -13,6 +13,10 @@ public:
         ComplexSparseMatrixX* upComplexS0 = NULL	// upsampled matrix for complex scalar
     ) override;
     void virtual BuildComplexS0(const VectorX& omega, ComplexSparseMatrixX& A) override;
+
+private:
+    // debug function
+    void BuildComplexS0Debug(const ComplexVectorX &zvals, const VectorX& omega, ComplexSparseMatrixX& A, ComplexVectorX &upZvals);
     
 private:
     std::vector<std::complex<double>> computeComplexWeight(const std::vector<Vector3>& pList, const std::vector<Vector3>& gradThetaList, const std::vector<double>& pWeights);

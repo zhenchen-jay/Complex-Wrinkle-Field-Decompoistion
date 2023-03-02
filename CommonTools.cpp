@@ -474,15 +474,11 @@ VectorX getEdgeArea(const Mesh& mesh)
 
 	for (int i = 0; i < mesh.GetEdgeCount(); i++)
 	{
-		int f0 = mesh.GetEdgeFaces(i)[0];
-		int f1 = mesh.GetEdgeFaces(i)[1];
-
-		if (f0 != -1 && f1 != -1)
-			edgeArea(i) = (faceArea(f0) + faceArea(f1)) / 2.;
-		else if (f0 == -1)
-			edgeArea(i) = faceArea(f1) / 2.;
-		else
-			edgeArea(i) = faceArea(f0) / 2.;
+        for(int j = 0; j < mesh.GetEdgeFaces(i).size(); j++)
+        {
+            int f0 = mesh.GetEdgeFaces(i)[j];
+            edgeArea(i) += faceArea(f0) / mesh.GetEdgeFaces(i).size();
+        }
 	}
 	return edgeArea;
 }

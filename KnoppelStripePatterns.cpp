@@ -117,6 +117,7 @@ void roundZvalsFromEdgeOmega(const Mesh& mesh, const VectorX& edgeW, const Vecto
 	for(int i = 0; i < nverts; i++)
 	{
 		zvals[i] = std::complex<double>(evecs(2 * i, 0), evecs(2 * i + 1, 0));
+        zvals[i] = std::complex<double>(std::cos(std::arg(zvals[i])), std::sin(std::arg(zvals[i])));
 	}
 }
 

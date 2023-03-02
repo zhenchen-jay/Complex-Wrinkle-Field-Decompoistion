@@ -3,7 +3,10 @@
 #include "../Optimization/ProjectedNewton.h"
 #include "../Optimization/Newton.h"
 #include "../Optimization/TestGradHess.h"
+#include "../KnoppelStripePatterns.h"
+#include "../MeshLib/IntrinsicGeometry.h"
 #include <igl/per_vertex_normals.h>
+#include <igl/hausdorff.h>
 
 void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes)
 {
@@ -68,6 +71,251 @@ void CWFDecomposition::initialization(
     tfwShell.initialization();
 
 	updateWrinkleCompUpMat();
+}
+
+void CWFDecomposition::initialization(
+        int upsampleTimes,                  // upsample info
+        bool isFixedBnd,                    // fixe bnd for loop
+        const Mesh& restMesh,               // rest (coarse) mesh
+        const Mesh& baseMesh,               // base (coarse) mesh
+        const Mesh& restWrinkleMesh,        // rest (wrinkle) mesh
+        const Mesh& wrinkledMesh,           // target wrinkle mesh (for decomposition)
+        double youngsModulus,               // Young's Modulus
+        double poissonRatio,                // Poisson's Ratio
+        double thickness                    // thickness
+)
+{
+    _upsampleTimes = upsampleTimes;
+    _restMesh = restMesh;
+    _restWrinkledMesh = restWrinkleMesh;
+    _wrinkledMesh = wrinkledMesh;
+    _wrinkledMesh.GetPos(_wrinkledV);
+    _wrinkledMesh.GetFace(_wrinkledF);
+
+    // this is really annoying. Some how we need to unify the mesh connectivity!
+    Eigen::MatrixXd restPos, curPos;
+    Eigen::MatrixXi restF, curF;
+    _restMesh.GetPos(restPos);
+    _restMesh.GetFace(restF);
+
+    baseMesh.GetPos(curPos);
+    baseMesh.GetFace(curF);
+
+    MeshConnectivity restMeshCon(restF), curMeshCon(curF);
+
+    tfwShell = TFWShell(restPos, restMeshCon, curPos, curMeshCon, poissonRatio, thickness, youngsModulus);
+    tfwShell.initialization();
+
+    _baseEdgeArea = getEdgeArea(baseMesh);
+    _baseVertArea = getVertArea(baseMesh);
+
+    // initialize amp and omega according to the compression
+    double d1, d2;
+    igl::hausdorff(_restWrinkledMesh.GetPos(), _restWrinkledMesh.GetFace(), _wrinkledV, _wrinkledF, d1);
+    igl::hausdorff(curPos, curF, _wrinkledV, _wrinkledF, d2);
+    double ampGuess = std::min(d1, d2);
+    if(ampGuess < 1e-3) // too small
+    {
+        ampGuess = 0.1;
+        double length = curPos.row(0).maxCoeff() - curPos.row(0).minCoeff();
+        double width = curPos.row(1).maxCoeff() - curPos.row(1).minCoeff();
+        double height = curPos.row(2).maxCoeff() - curPos.row(2).minCoeff();
+
+        double bboxSize = std::max(length, width);
+        bboxSize = std::max(bboxSize, height);
+
+        ampGuess = 0.1 * bboxSize;
+    }
+    Eigen::VectorXd amp, omega;
+    initializeAmpOmega(curPos, curMeshCon, ampGuess, amp, omega);
+    omega = swapEdgeVec(curF, omega, 0);    // convert to CWF omega order
+    Eigen::MatrixXd faceOmega = intrinsicEdgeVec2FaceVec(omega, baseMesh);
+    std::cout << faceOmega << std::endl;
+
+    // initialize zvals
+    ComplexVectorX zvals;
+    roundZvalsFromEdgeOmega(baseMesh, omega, _baseEdgeArea, _baseVertArea, baseMesh.GetVertCount(), zvals);
+    _baseCWF = CWF(amp, omega, zvals, baseMesh);
+
+    _subOp = std::make_shared<ComplexLoop>();
+    _subOp->SetMesh(_baseCWF._mesh);
+    _subOp->SetBndFixFlag(isFixedBnd);
+    CWF upcwf;
+    _subOp->CWFSubdivide(_baseCWF, upcwf, upsampleTimes, &_LoopS0, nullptr, &_upZMat);
+    _upMesh = upcwf._mesh;
+    _upMesh.GetPos(_upV);
+    _upMesh.GetFace(_upF);
+    igl::per_vertex_normals(_upV, _upF, _upN);
+    _upVertArea = getVertArea(_upMesh);
+
+    updateWrinkleCompUpMat();
+
+}
+
+struct UnionFind
+{
+    std::vector<int> parent;
+    std::vector<int> sign;
+    UnionFind(int items)
+    {
+        parent.resize(items);
+        sign.resize(items);
+        for(int i=0; i<items; i++)
+        {
+            parent[i] = i;
+            sign[i] = 1;
+        }
+    }
+
+    std::pair<int, int> find(int i)
+    {
+        if(parent[i] != i)
+        {
+            auto newparent = find(parent[i]);
+            sign[i] *= newparent.second;
+            parent[i] = newparent.first;
+        }
+
+        return {parent[i], sign[i]};
+    }
+
+    void dounion(int i, int j, int usign)
+    {
+        auto xroot = find(i);
+        auto yroot = find(j);
+        if(xroot.first != yroot.first)
+        {
+            parent[xroot.first] = yroot.first;
+            sign[xroot.first] = usign * xroot.second * yroot.second;
+        }
+    }
+};
+
+static const double PI = 3.1415926535898;
+
+static void combField(const Eigen::MatrixXi &F,
+               const std::vector<Eigen::Matrix2d> &abars,
+               const Eigen::VectorXd* weight,
+               const Eigen::MatrixXd &w, Eigen::MatrixXd &combedW)
+{
+    int nfaces = F.rows();
+    UnionFind uf(nfaces);
+    MeshConnectivity mesh(F);
+    IntrinsicGeometry geom(mesh, abars);
+    struct Visit
+    {
+        int edge;
+        int sign;
+        double norm;
+        bool operator<(const Visit &other) const
+        {
+            return norm > other.norm;
+        }
+    };
+
+    std::priority_queue<Visit> pq;
+
+    int nedges = mesh.nEdges();
+    for(int i=0; i<nedges; i++)
+    {
+        int face1 = mesh.edgeFace(i, 0);
+        int face2 = mesh.edgeFace(i, 1);
+        if(face1 == -1 || face2 == -1)
+            continue;
+
+        Eigen::Vector2d curw = abars[face1].inverse() * w.row(face1).transpose();
+        Eigen::Vector2d nextwbary1 = abars[face2].inverse() * w.row(face2).transpose();
+        Eigen::Vector2d nextw = geom.Ts.block<2, 2>(2 * i, 2) * nextwbary1;
+        int sign = ( (curw.transpose() * abars[face1] * nextw) < 0 ? -1 : 1);
+        double innerp = curw.transpose() * abars[face1] * nextw;
+
+        if (!weight)
+        {
+            double normcw = std::sqrt(curw.transpose() * abars[face1] * curw);
+            double normnw = std::sqrt(nextw.transpose() * abars[face1] * nextw);
+            double negnorm = -std::min(normcw, normnw);
+            pq.push({ i, sign, negnorm });
+
+        }
+        else
+        {
+            double compcw = weight->coeffRef(face1);
+            double compnw = weight->coeffRef(face2);
+            double negw = -std::min(compcw, compnw);
+
+            pq.push({ i, sign, negw });
+        }
+
+
+    }
+
+    while(!pq.empty())
+    {
+        auto next = pq.top();
+        pq.pop();
+        uf.dounion(mesh.edgeFace(next.edge, 0), mesh.edgeFace(next.edge, 1), next.sign);
+    }
+
+    combedW.resize(nfaces, 2);
+    for(int i=0; i<nfaces; i++)
+    {
+        int sign = uf.find(i).second;
+        combedW.row(i) = w.row(i) * sign;
+    }
+
+}
+
+void CWFDecomposition::initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess, Eigen::VectorXd& amp, Eigen::VectorXd& omega)
+{
+    // compute the compression direction per face
+    int nfaces = curMeshCon.nFaces();
+    int nverts = curPos.rows();
+    amp.resize(nverts);
+    amp.setConstant(ampGuess);
+
+    Eigen::MatrixXd faceOmega(nfaces, 2);
+
+    for (int i = 0; i < nfaces; i++)
+    {
+        Eigen::Matrix2d abar = tfwShell.getIbar(i);
+        Eigen::Matrix2d a = tfwShell.getI(i);
+        Eigen::Matrix2d diff = a - abar;
+        Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::Matrix2d> solver(diff, abar);
+        Eigen::Vector2d evec = solver.eigenvectors().col(0);
+        double faceCompression = fabs(solver.eigenvalues()[0]);
+        faceOmega.row(i) = std::sqrt(2.0 * faceCompression) * (abar * evec).transpose();	// convert to one-form, assume unit amp
+    }
+
+    // comb vectors
+    Eigen::MatrixXd combedOmega;
+    combField(curMeshCon.faces(), tfwShell.getIbars(), nullptr, faceOmega, combedOmega);
+    std::swap(faceOmega, combedOmega);
+    faceOmega /= ampGuess;
+
+    // edge one form
+    int nedges = curMeshCon.nEdges();
+    omega.resize(nedges);
+    omega.setZero();
+    for (int i = 0; i < nfaces; i++)
+    {
+        for (int e = 0; e < 3; e++)
+        {
+            int edge = curMeshCon.faceEdge(i, e);
+            int vert1 = curMeshCon.edgeVertex(edge, 0);
+            int vert2 = curMeshCon.edgeVertex(edge, 1);
+            Eigen::Vector2d barys[3] = { {0,0}, {1,0}, {0,1} };
+            Eigen::Vector2d facee(0, 0);
+            for (int j = 0; j < 3; j++)
+            {
+                if (vert1 == curMeshCon.faceVertex(i, j))
+                    facee -= barys[j];
+                else if (vert2 == curMeshCon.faceVertex(i, j))
+                    facee += barys[j];
+            }
+
+            omega[edge] = faceOmega.row(i).dot(facee);
+        }
+    }
 }
 
 void CWFDecomposition::updateWrinkleCompUpMat()
@@ -328,7 +576,7 @@ void CWFDecomposition::optimizeCWF()
 {
 
     // alternative update
-    for(int i = 0; i < 100; i++)
+    for(int i = 0; i < 1; i++)
     {
         optimizeAmpOmega();
         optimizePhase();

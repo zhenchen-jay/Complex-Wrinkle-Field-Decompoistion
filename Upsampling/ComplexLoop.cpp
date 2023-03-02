@@ -86,8 +86,7 @@ void ComplexLoop::BuildComplexS0(const VectorX& omega, ComplexSparseMatrixX& A)
 		{
 			if(_isFixBnd)
 			{
-				T.push_back({2 * vi, 2 * vi, 1.0});
-				T.push_back({2 * vi + 1, 2 * vi + 1, 1.0});
+				T.push_back({vi, vi, 1.0});
 			}
 			else
 			{
@@ -119,8 +118,8 @@ void ComplexLoop::BuildComplexS0(const VectorX& omega, ComplexSparseMatrixX& A)
 					bary(vjInface) = 1. / 4;
 
 					Vector2 edgeBary;
-					bary[viInEdge] = 3. / 4.;
-					bary[1 - viInEdge] = 1. / 4.;
+                    edgeBary[viInEdge] = 3. / 4.;
+                    edgeBary[1 - viInEdge] = 1. / 4.;
 
 					edgeVertMap[j][viInEdge] = vi;
 					edgeVertMap[j][1 - viInEdge] = vj;
@@ -317,7 +316,7 @@ void ComplexLoop::CWFSubdivide(const CWF& cwf, CWF& upcwf, int level, SparseMatr
 	}
 
 	upcwf = cwf;
-	
+
 	for (int l = 0; l < level; ++l) 
 	{
 		SparseMatrixX tmpS0, tmpS1;
@@ -359,4 +358,240 @@ void ComplexLoop::CWFSubdivide(const CWF& cwf, CWF& upcwf, int level, SparseMatr
 		*upS1 = S1;
 	if (upComplexS0)
 		*upComplexS0 = CS0;
+}
+
+// TODO: remove this
+void ComplexLoop::BuildComplexS0Debug(const ComplexVectorX &zvals, const VectorX& omega, ComplexSparseMatrixX& A, ComplexVectorX& upZvals)
+{
+    int V = _mesh.GetVertCount();
+    int E = _mesh.GetEdgeCount();
+    upZvals.resize(V + E);
+
+    std::vector<Eigen::Triplet<std::complex<double>>> T;
+
+    // Even (old) vertices
+    for(int vi = 0; vi < V; ++vi)
+    {
+        if(_mesh.IsVertBoundary(vi))  // boundary vertices
+        {
+            if(_isFixBnd)
+            {
+                T.push_back({vi, vi, 1.0});
+                upZvals[vi] = zvals[vi];
+            }
+            else
+            {
+                std::vector<int> boundary(2);
+                boundary[0] = _mesh.GetVertEdges(vi).front();
+                boundary[1] = _mesh.GetVertEdges(vi).back();
+
+                std::vector<Vector3> gradthetap(2);
+                std::vector<std::complex<double>> zp(2);
+                std::vector<double> coords = { 1. / 2, 1. / 2 };
+                std::vector<Vector3> pList(2);
+                std::vector<std::vector<int>> edgeVertMap(2, {-1, -1});
+
+                std::vector<std::vector<std::complex<double>>> innerWeights(2);
+                std::vector<std::complex<double>> outerWeights(2);
+
+                for (int j = 0; j < boundary.size(); ++j)
+                {
+                    int edge = boundary[j];
+                    int face = _mesh.GetEdgeFaces(edge)[0];
+                    int viInface = _mesh.GetVertIndexInFace(face, vi);
+
+                    int viInEdge = _mesh.GetVertIndexInEdge(edge, vi);
+                    int vj = _mesh.GetEdgeVerts(edge)[(viInEdge + 1) % 2];
+
+                    int vjInface = _mesh.GetVertIndexInFace(face, vj);
+
+                    Vector3 bary = Vector3::Zero();
+                    bary(viInface) = 3. / 4;
+                    bary(vjInface) = 1. / 4;
+
+                    Vector2 edgeBary;
+                    edgeBary[viInEdge] = 3. / 4.;
+                    edgeBary[1 - viInEdge] = 1. / 4.;
+
+                    edgeVertMap[j][viInEdge] = vi;
+                    edgeVertMap[j][1 - viInEdge] = vj;
+
+                    pList[j] = 3. / 4 * _mesh.GetVertPos(vi) + 1. / 4 * _mesh.GetVertPos(vj);
+                    // grad from vi
+                    gradthetap[j] = computeBaryGradThetaFromOmegaPerface(omega, face, bary);
+                    innerWeights[j] = computeEdgeComplexWeight(omega, edgeBary, edge);
+
+                    zp[j] = innerWeights[j][viInEdge] * zvals[vi] + innerWeights[j][1 - viInEdge] * zvals[vj];
+                    std::cout << "inner zp norm: " << abs(zp[j]) << std::endl;
+                }
+                outerWeights = computeComplexWeight(pList, gradthetap, coords);
+
+                std::complex<double> z = 0;
+
+                for(int j = 0; j < 2; j++)
+                {
+                    for(int k = 0; k < 2; k++)
+                    {
+                        std::complex<double> cjk = outerWeights[j] * innerWeights[j][k];
+                        T.push_back({vi, edgeVertMap[j][k], cjk});
+                    }
+                    z += zp[j] * outerWeights[j];
+                }
+                upZvals[vi] = z;
+                std::cout << "id: " << vi << ", outer zp norm: " << abs(z) << std::endl;
+                if(abs(z) > 1)
+                {
+                    std::cout << "debug case" << std::endl;
+                }
+            }
+        }
+        else        // inner vertices
+        {
+            const std::vector<int>& vFaces = _mesh.GetVertFaces(vi);
+            int nNeiFaces = vFaces.size();
+
+            // Fig5 left [Wang et al. 2006]
+            Scalar alpha = 0.375;
+            if (nNeiFaces == 3)
+                alpha /= 2;
+            else
+                alpha /= nNeiFaces;
+
+            double beta = nNeiFaces / 2. * alpha;
+
+            std::vector<std::complex<double>> zp(nNeiFaces);
+            std::vector<Vector3> gradthetap(nNeiFaces);
+            std::vector<double> coords;
+            coords.resize(nNeiFaces, 1. / nNeiFaces);
+            std::vector<Vector3> pList(nNeiFaces);
+            std::vector<std::vector<std::complex<double>>> innerWeights(nNeiFaces);
+            std::vector<std::complex<double>> outerWeights(nNeiFaces);
+            std::vector<std::vector<int>> faceVertMap(nNeiFaces, {-1, -1, -1});
+
+            for (int k = 0; k < nNeiFaces; ++k)
+            {
+                int face = vFaces[k];
+                int viInface = _mesh.GetVertIndexInFace(face, vi);
+                Vector3 bary;
+                bary.setConstant(beta);
+                bary(viInface) = 1 - 2 * beta;
+
+                pList[k] = Vector3::Zero();
+                for (int i = 0; i < 3; i++)
+                {
+                    pList[k] += bary(i) * _mesh.GetVertPos(_mesh.GetFaceVerts(face)[i]);
+                }
+                faceVertMap[k] = _mesh.GetFaceVerts(face);
+
+                innerWeights[k] = computeTriangleComplexWeight(omega, bary, face);
+                gradthetap[k] = computeBaryGradThetaFromOmegaPerface(omega, face, bary);
+
+                zp[k] = 0;
+                for (int i = 0; i < 3; i++)
+                {
+                    zp[k] += innerWeights[k][i] * zvals[_mesh.GetFaceVerts(face)[i]];
+                }
+                std::cout << "inner zp norm: " << abs(zp[k]) << std::endl;
+
+            }
+            outerWeights = computeComplexWeight(pList, gradthetap, coords);
+
+            std::complex<double> z = 0;
+            for(int j = 0; j < nNeiFaces; j++)
+            {
+                for(int k = 0; k < 3; k++)
+                {
+                    std::complex<double> cjk = outerWeights[j] * innerWeights[j][k];
+                    T.push_back({vi, faceVertMap[j][k], cjk});
+                }
+                z += outerWeights[j] * zp[j];
+            }
+            upZvals[vi] = z;
+            std::cout << "id: " << vi << ", outer zp norm: " << abs(z) << std::endl;
+
+            if(abs(z) > 1)
+            {
+                std::cout << "debug case" << std::endl;
+            }
+        }
+    }
+
+    // Odd (new) vertices
+    for (int edge = 0; edge < E; ++edge)
+    {
+        int row = edge + V;
+        if (_mesh.IsEdgeBoundary(edge))
+        {
+            Vector2 bary;
+            bary << 0.5, 0.5;
+            std::vector<std::complex<double>> complexWeight = computeEdgeComplexWeight(omega, bary, edge);
+            T.push_back({row, _mesh.GetEdgeVerts(edge)[0], complexWeight[0]});
+            T.push_back({row, _mesh.GetEdgeVerts(edge)[1], complexWeight[1]});
+            auto z = complexWeight[0] * zvals[_mesh.GetEdgeVerts(edge)[0]] + complexWeight[1] * zvals[_mesh.GetEdgeVerts(edge)[1]];
+            std::cout << "id: " << row << ", outer zp norm: " << abs(z) << std::endl;
+            upZvals[row] = z;
+
+            if(abs(z) > 1)
+            {
+                std::cout << "debug case" << std::endl;
+            }
+        }
+        else
+        {
+            std::vector<std::complex<double>> zp(2);
+            std::vector<Vector3> gradthetap(2);
+            std::vector<double> coords = { 1. / 2, 1. / 2 };
+            std::vector<Vector3> pList(2);
+            std::vector<std::vector<std::complex<double>>> innerWeights(2);
+            std::vector<std::complex<double>> outerWeights(2);
+            std::vector<std::vector<int>> faceVertMap(2, {-1, -1, -1});
+
+            for (int j = 0; j < 2; ++j)
+            {
+                int face = _mesh.GetEdgeFaces(edge)[j];
+                int offset = _mesh.GetEdgeIndexInFace(face, edge);
+
+                Vector3 bary;
+                bary.setConstant(3. / 8.);
+                bary((offset + 2) % 3) = 0.25;
+
+                pList[j] = Vector3::Zero();
+                for (int i = 0; i < 3; i++)
+                {
+                    pList[j] += bary(i) * _mesh.GetVertPos(_mesh.GetFaceVerts(face)[i]);
+                }
+                faceVertMap[j] = _mesh.GetFaceVerts(face);
+                innerWeights[j] = computeTriangleComplexWeight(omega, bary, face);
+                gradthetap[j] = computeBaryGradThetaFromOmegaPerface(omega, face, bary);
+
+                zp[j] = 0;
+                for (int i = 0; i < 3; i++)
+                {
+                    zp[j] += innerWeights[j][i] * zvals[_mesh.GetFaceVerts(face)[i]];
+                }
+                std::cout << "inner zp norm: " << abs(zp[j]) << std::endl;
+            }
+            outerWeights = computeComplexWeight(pList, gradthetap, coords);
+
+            std::complex<double> z = 0;
+            for(int j = 0; j < 2; j++)
+            {
+                for(int k = 0; k < 3; k++)
+                {
+                    std::complex<double> cjk = outerWeights[j] * innerWeights[j][k];
+                    T.push_back({row, faceVertMap[j][k], cjk});
+                }
+                z += outerWeights[j] * zp[j];
+            }
+            std::cout << "id: " << row << ", outer zp norm: " << abs(z) << std::endl;
+            upZvals[row] = z;
+            if(abs(z) > 1)
+            {
+                std::cout << "debug case" << std::endl;
+            }
+        }
+    }
+
+    A.resize(V + E, V);
+    A.setFromTriplets(T.begin(), T.end());
 }

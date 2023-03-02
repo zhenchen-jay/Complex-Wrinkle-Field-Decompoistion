@@ -29,6 +29,23 @@ public:
                         double thickness                    // thickness
                         );
 
+    void initialization(int upSampleTimes,
+                        bool isFixedBnd,                    // fixed bnd for loop
+                        const Mesh& restMesh,               // rest (coarse) mesh
+                        const Mesh& baseMesh,               // base (coarse) mesh
+                        const Mesh& restWrinkleMesh,        // rest (wrinkle) mesh
+                        const Mesh& wrinkledMesh,           // target wrinkle mesh (for decomposition)
+                        double youngsModulus,               // Young's Modulus
+                        double poissonRatio,                // Poisson's Ratio
+                        double thickness                    // thickness
+    );
+
+    void initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess, Eigen::VectorXd& amp, Eigen::VectorXd& omega);
+    /*
+     * initialize amp and omega based on the compression amount.
+     * REQUIRE: tfwshell has been initialized! (providing foundamental forms)
+     */
+
     void getCWF(CWF &baseCWF);
 
     void optimizeCWF();

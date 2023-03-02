@@ -87,6 +87,39 @@
 
         double bendingEnergyPerface(const Eigen::VectorXd& amp, const Eigen::VectorXd& omega, int faceId, Eigen::VectorXd *deriv, Eigen::MatrixXd *hessian, bool isProj = true);
 
+        Eigen::Matrix2d& getIbar(int faceId)
+        {
+            return _Ibars[faceId];
+        }
+        std::vector<Eigen::Matrix2d>& getIbars()
+        {
+            return _Ibars;
+        }
+        std::vector<Eigen::Matrix2d>& getIs()
+        {
+            return _Is;
+        }
+
+        Eigen::Matrix2d& getI(int faceId)
+        {
+            return _Is[faceId];
+        }
+        Eigen::Matrix2d& getIIbar(int faceId)
+        {
+            return _IIbars[faceId];
+        }
+        Eigen::Matrix2d& getII(int faceId)
+        {
+            return _IIs[faceId];
+        }
+        Eigen::MatrixXd& getMaximalCurvatureDir()
+        {
+            return _PD1;
+        }
+        Eigen::MatrixXd& getMinimalCurvatureDir()
+        {
+            return _PD2;
+        }
 
     private:
         Eigen::MatrixXd _restV;             // rest position
