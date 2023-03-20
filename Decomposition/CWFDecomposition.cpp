@@ -138,6 +138,8 @@ void CWFDecomposition::initialization(
 	Eigen::MatrixXd faceOmega;
 	initializeAmpOmega(curPos, curMeshCon, ampGuess, amp, faceOmega);
 	omega = faceVec2IntrinsicEdgeVec(faceOmega, baseMesh);
+    omega *= 17.0 / 13.0;
+    amp /= 17.0 / 13.0;
 
 	// initialize zvals
 	ComplexVectorX zvals;
@@ -157,6 +159,60 @@ void CWFDecomposition::initialization(
 
 	updateWrinkleCompUpMat();
 
+}
+
+void CWFDecomposition::initialization(
+        const CWF& cwf,
+        int upsampleTimes,
+        bool isFixedBnd,                            // fixed bnd for loop
+        const Mesh& restMesh,                       // rest (coarse) mesh
+        const Mesh& restWrinkleMesh,                // rest (wrinkle) mesh
+        const Mesh& wrinkledMesh,                   // target wrinkle mesh (for decomposition)
+        double youngsModulus,                       // Young's Modulus
+        double poissonRatio,                        // Poisson's Ratio
+        double thickness,                           // thickness
+        const std::unordered_set<int>& clampedVert  // clamped vertices
+)
+{
+    _upsampleTimes = upsampleTimes;
+    _restMesh = restMesh;
+    _restWrinkledMesh = restWrinkleMesh;
+    _wrinkledMesh = wrinkledMesh;
+    _wrinkledMesh.GetPos(_wrinkledV);
+    _wrinkledMesh.GetFace(_wrinkledF);
+
+
+    // this is really annoying. Some how we need to unify the mesh connectivity!
+    Eigen::MatrixXd restPos, curPos;
+    Eigen::MatrixXi restF, curF;
+    _restMesh.GetPos(restPos);
+    _restMesh.GetFace(restF);
+
+    cwf._mesh.GetPos(curPos);
+    cwf._mesh.GetFace(curF);
+
+    MeshConnectivity restMeshCon(restF), curMeshCon(curF);
+    // clamped amp and omega
+    buildProjectionMat(clampedVert, curMeshCon, curPos.rows());
+    tfwShell = TFWShell(restPos, restMeshCon, curPos, curMeshCon, poissonRatio, thickness, youngsModulus);
+    tfwShell.initialization();
+
+    _baseEdgeArea = getEdgeArea(cwf._mesh);
+    _baseVertArea = getVertArea(cwf._mesh);
+    _baseCWF = cwf;
+
+    _subOp = std::make_shared<ComplexLoop>();
+    _subOp->SetMesh(_baseCWF._mesh);
+    _subOp->SetBndFixFlag(isFixedBnd);
+    CWF upcwf;
+    _subOp->CWFSubdivide(_baseCWF, upcwf, upsampleTimes, &_LoopS0, nullptr, &_upZMat);
+    _upMesh = upcwf._mesh;
+    _upMesh.GetPos(_upV);
+    _upMesh.GetFace(_upF);
+    igl::per_vertex_normals(_upV, _upF, _upN);
+    _upVertArea = getVertArea(_upMesh);
+
+    updateWrinkleCompUpMat();
 }
 
 struct UnionFind
@@ -666,24 +722,24 @@ void CWFDecomposition::optimizeCWF()
 {
 
 	// alternative update
-	for(int i = 0; i < 3; i++)
+	for(int i = 0; i < 1; i++)
 	{
 		//optimizeAmpOmega();		// TFW sucks
-		Eigen::VectorXd amp, omega;
-		Eigen::MatrixXd faceOmega;
-
-		Eigen::MatrixXd curPos;
-		Eigen::MatrixXi curF;
-
-		_baseCWF._mesh.GetPos(curPos);
-		_baseCWF._mesh.GetFace(curF);
-
-		MeshConnectivity curMeshCon(curF);
-
-		initializeAmpOmega(curPos, curMeshCon, _baseCWF._amp.maxCoeff(), amp, faceOmega);
-		omega = faceVec2IntrinsicEdgeVec(faceOmega, _baseCWF._mesh);
-		_baseCWF._amp = amp;
-		_baseCWF._omega = omega;
+//		Eigen::VectorXd amp, omega;
+//		Eigen::MatrixXd faceOmega;
+//
+//		Eigen::MatrixXd curPos;
+//		Eigen::MatrixXi curF;
+//
+//		_baseCWF._mesh.GetPos(curPos);
+//		_baseCWF._mesh.GetFace(curF);
+//
+//		MeshConnectivity curMeshCon(curF);
+//
+//		initializeAmpOmega(curPos, curMeshCon, _baseCWF._amp.maxCoeff(), amp, faceOmega);
+//		omega = faceVec2IntrinsicEdgeVec(faceOmega, _baseCWF._mesh);
+//		_baseCWF._amp = amp;
+//		_baseCWF._omega = omega;
 
 		optimizePhase();
 		optimizeBasemesh();

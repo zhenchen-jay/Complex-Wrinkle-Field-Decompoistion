@@ -43,6 +43,19 @@ public:
                         const std::unordered_set<int>& clampedVert  // clamped vertices
     );
 
+    void initialization(
+                        const CWF& cwf,
+                        int upSampleTimes,
+                        bool isFixedBnd,                            // fixed bnd for loop
+                        const Mesh& restMesh,                       // rest (coarse) mesh
+                        const Mesh& restWrinkleMesh,                // rest (wrinkle) mesh
+                        const Mesh& wrinkledMesh,                   // target wrinkle mesh (for decomposition)
+                        double youngsModulus,                       // Young's Modulus
+                        double poissonRatio,                        // Poisson's Ratio
+                        double thickness,                           // thickness
+                        const std::unordered_set<int>& clampedVert  // clamped vertices
+    );
+
     void initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess, Eigen::VectorXd& amp, Eigen::MatrixXd& faceOmega);
     /*
      * initialize amp and omega based on the compression amount.

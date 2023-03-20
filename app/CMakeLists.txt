@@ -1,3 +1,4 @@
 add_subdirectory(CWFUpsamplingGui)
 add_subdirectory(CWFDecompositionGui)
 add_subdirectory(CWFDecompositionGuiWithRest)
+add_subdirectory(BasemeshExtractionGui)

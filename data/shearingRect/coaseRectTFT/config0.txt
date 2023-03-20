@@ -1,1 +1,0 @@
-varaint: PREDET, diag_pertube: 1e-09, eps: 1e-06, inner_iter_ref: 1, outer_iter_ref: 1

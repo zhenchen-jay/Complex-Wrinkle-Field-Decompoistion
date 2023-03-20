@@ -12,9 +12,13 @@
 #include <igl/file_dialog_save.h>
 #include <igl/cotmatrix_entries.h>
 #include <igl/cylinder.h>
+#include <igl/remesh_along_isoline.h>
+#include <igl/principal_curvature.h>
+#include <igl/isolines.h>
 #include "polyscope/messages.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
+#include "polyscope/curve_network.h"
 #include "polyscope/view.h"
 
 #include <iostream>
@@ -31,6 +35,7 @@
 #include "../../Upsampling/BaseLoop.h"
 #include "../../Upsampling/ComplexLoop.h"
 #include "../../Decomposition/CWFDecomposition.h"
+#include "../../ExtractIsoline.h"
 
 
 #include <CLI/CLI.hpp>
@@ -47,6 +52,8 @@ ComplexVectorX upInitZvals, upOptZvals;
 MatrixX initFaceOmega, optFaceOmega;
 MatrixX initUpFaceOmega, optUpFaceOmega;
 
+VectorX minCurvature, maxCurvature, meanCurvature;
+
 std::string workingFolder = "";
 int upsampleTimes = 0;
 double wrinkleAmpRatio = 1.0;
@@ -54,7 +61,7 @@ double wrinkleAmpRatio = 1.0;
 float vecratio = 0.01;
 bool isFixedBnd = true;
 double ampMax = 1;
-bool isLoadCWF = false;
+bool isLoadCWF = true;
 
 double youngs = 1e7;
 double thickness = 1e-4;
@@ -62,6 +69,8 @@ double poisson = 0.44;
 
 PaintGeometry mPaint;
 CWFDecomposition decompModel;
+
+Eigen::MatrixXi wrinkledFaceNeighbors;
 
 int updateViewHelper(
 		const MatrixX& basePos, const Eigen::MatrixXi& baseFaces,
@@ -139,7 +148,7 @@ int updateViewHelper(
 	return curShift;
 }
 
-void updateView(bool isFirstTime = true)
+void updateView(bool isFirstTime = true, bool drawIsolines = false)
 {
 	double shiftx = 1.5 * (initCWF._mesh.GetPos().col(0).maxCoeff() - initCWF._mesh.GetPos().col(0).minCoeff());
 	double shifty = 1.5 * (initCWF._mesh.GetPos().col(1).maxCoeff() - initCWF._mesh.GetPos().col(1).minCoeff());
@@ -154,7 +163,35 @@ void updateView(bool isFirstTime = true)
 	polyscope::getSurfaceMesh("reference wrinkled mesh")->setSurfaceColor({ 80 / 255.0, 122 / 255.0, 91 / 255.0 });
 	polyscope::getSurfaceMesh("reference wrinkled mesh")->translate({ curShift * shiftx, 2 * shifty, 0 });
 
-	std::cout << "dist: " << (initWrinkledPos - wrinkledPos).norm() << ", after optimization: " << (optWrinkledPos - wrinkledPos).norm() << std::endl;
+    if(isFirstTime)
+    {
+        MatrixX maxDir, minDir;
+        igl::principal_curvature(wrinkledPos, wrinkledFaces, minDir, maxDir, minCurvature, maxCurvature);
+        meanCurvature = (minCurvature + maxCurvature) / 2;
+    }
+
+    auto minCurvPattens = polyscope::getSurfaceMesh("reference wrinkled mesh")->addVertexScalarQuantity("min curvature", minCurvature);
+    minCurvPattens->setColorMap("coolwarm");
+    auto maxCurvPattens = polyscope::getSurfaceMesh("reference wrinkled mesh")->addVertexScalarQuantity("max curvature", maxCurvature);
+    maxCurvPattens->setColorMap("coolwarm");
+    auto meanCurvPattens = polyscope::getSurfaceMesh("reference wrinkled mesh")->addVertexScalarQuantity("mean curvature", meanCurvature);
+    meanCurvPattens->setColorMap("coolwarm");
+
+    if(drawIsolines)
+    {
+        Eigen::MatrixXi isoE;
+        MatrixX isoV;
+//        zeroLevelSetIsopoints(wrinkledMesh, meanCurvature, isoV);
+        extractIsoline(wrinkledPos, wrinkledFaces, wrinkledFaceNeighbors, meanCurvature, 0, isoV, isoE);
+//        igl::isolines(wrinkledPos, wrinkledFaces, meanCurvature, 10, isoV, isoE);
+//        polyscope::registerPointCloud("0-isopoints", isoV);
+//        polyscope::getPointCloud("0-isopoints")->translate({ curShift * shiftx, 2 * shifty, 0 });
+
+        polyscope::registerCurveNetwork("0-isolines", isoV, isoE);
+        polyscope::getCurveNetwork("0-isolines")->translate({ curShift * shiftx, 2 * shifty, 0 });
+    }
+
+//	std::cout << "dist: " << (initWrinkledPos - wrinkledPos).norm() << ", after optimization: " << (optWrinkledPos - wrinkledPos).norm() << std::endl;
 }
 
 void subdivideMeshHelper(
@@ -258,6 +295,18 @@ bool loadProblem(std::string loadFileName = "")
         exit(EXIT_FAILURE);
     }
     wrinkledMesh.Populate(wrinkledPos, wrinkledFaces);
+    wrinkledFaceNeighbors.resize(wrinkledFaces.rows(), 3);
+    for(int i = 0; i < wrinkledFaces.rows(); i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            int eid = wrinkledMesh.GetFaceEdges(i)[(j + 1) % 3];
+            if(wrinkledMesh.GetEdgeFaces(eid).size() == 1)
+                wrinkledFaceNeighbors(i, j) = -1;
+            else
+                wrinkledFaceNeighbors(i, j) = wrinkledMesh.GetEdgeFaces(eid)[0] != i ? wrinkledMesh.GetEdgeFaces(eid)[0] : wrinkledMesh.GetEdgeFaces(eid)[1];
+        }
+    }
 
     // wrinkled mesh
     meshFile = jval["rest_wrinkled_mesh"];
@@ -314,6 +363,7 @@ bool loadProblem(std::string loadFileName = "")
                 edgeArea = getEdgeArea(initCWF._mesh);
                 vertArea = getVertArea(initCWF._mesh);
                 roundZvalsFromEdgeOmegaVertexMag(initCWF._mesh, initCWF._omega, initCWF._amp, edgeArea, vertArea, nverts, initCWF._zvals);
+                std::cout << "round finished" << std::endl;
             }
         }
         else
@@ -399,12 +449,12 @@ bool loadProblem(std::string loadFileName = "")
     poisson = jval["Poisson_ratio"];
     thickness = jval["thickness"];
 
-
     if(isLoadCWF)
     {
         initCWF._zvals = normalizeZvals(initCWF._zvals);
         optCWF = initCWF;
-        decompModel.initialization(optCWF, upsampleTimes, restMesh, restWrinkledMesh, wrinkledMesh, youngs, poisson, thickness);
+//        decompModel.initialization(optCWF, upsampleTimes, restMesh, restWrinkledMesh, wrinkledMesh, youngs, poisson, thickness);
+        decompModel.initialization(optCWF, upsampleTimes, isFixedBnd, restMesh, restWrinkledMesh, wrinkledMesh, youngs, poisson, thickness, clampedVerts);
     }
     else
     {
@@ -470,6 +520,12 @@ void callback() {
 		subdivideMesh(false);
 		updateView(false);
 	}
+
+    if (ImGui::Button("Extract 0-level set", ImVec2(-1, 0)))
+    {
+        updateView(false, true);
+    }
+
 
 	ImGui::PopItemWidth();
 }
