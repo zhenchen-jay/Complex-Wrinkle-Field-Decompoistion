@@ -170,7 +170,10 @@ void updateView(bool isFirstTime = true, bool drawIsolines = false)
 //        polyscope::getPointCloud("0-isopoints")->translate({ curShift * shiftx, 2 * shifty, 0 });
 
         polyscope::registerCurveNetwork("0-isolines", isoV, isoE);
-        polyscope::getCurveNetwork("0-isolines")->translate({ 2 * shiftx, 2 * shifty, 0 });
+        polyscope::getCurveNetwork("0-isolines")->translate({ 0, 0, 0 });
+
+        polyscope::registerPointCloud("0-isopoints-wrinkle-mesh", isoV);
+        polyscope::getPointCloud("0-isopoints-wrinkle-mesh")->translate({ 0, 0, 0 });
     }
 
 //	std::cout << "dist: " << (initWrinkledPos - wrinkledPos).norm() << ", after optimization: " << (optWrinkledPos - wrinkledPos).norm() << std::endl;
@@ -186,7 +189,7 @@ bool loadProblem(std::string loadFileName = "")
     if(!igl::readOBJ(loadFileName, wrinkledPos, wrinkledFaces))
     {
         std::cerr << "Failed to load wrinkled mesh!" << std::endl;
-        exit(EXIT_FAILURE);
+        return false;
     }
     wrinkledMesh.Populate(wrinkledPos, wrinkledFaces);
     wrinkledFaceNeighbors.resize(wrinkledFaces.rows(), 3);
@@ -229,6 +232,56 @@ void callback() {
     {
         updateView(false, true);
     }
+    if (ImGui::Button("Compute base surface", ImVec2(-1, 0)))
+    {
+        Eigen::MatrixXd extendedWrinklePos;
+        Eigen::MatrixXi extendedWrinkleFace;
+        Eigen::MatrixXi isoE;
+        MatrixX isoV;
+        extractIsoline(wrinkledPos, wrinkledFaces, wrinkledFaceNeighbors, meanCurvature, 0, isoV, isoE, extendedWrinklePos, extendedWrinkleFace);
+
+        double shiftx = wrinkledPos.col(0).maxCoeff() - wrinkledPos.col(0).minCoeff();
+        polyscope::registerSurfaceMesh("splitted wrinkles", extendedWrinklePos, extendedWrinkleFace);
+        polyscope::getSurfaceMesh("splitted wrinkles")->translate({2 * shiftx, 0, 0});
+
+        polyscope::registerPointCloud("0-isopoints", extendedWrinklePos.block(wrinkledPos.rows(), 0, extendedWrinklePos.rows() - wrinkledPos.rows(), 3));
+        polyscope::getPointCloud("0-isopoints")->translate({ 2 * shiftx, 0, 0 });
+
+        polyscope::view::resetCameraToHomeView();
+    }
+
+    if (ImGui::Button("test split", ImVec2(-1, 0)))
+    {
+        Eigen::MatrixXd testV(3, 3);
+        Eigen::MatrixXi testF(1, 3);
+        testV << 0, 0, 0,
+        1, 0, 0,
+        0, 1, 0;
+        testF << 0, 1, 2;
+        Eigen::VectorXd testCurvature(3);
+        testCurvature << -1, 1, 1;
+
+
+        Eigen::MatrixXd extendedWrinklePos;
+        Eigen::MatrixXi extendedWrinkleFace;
+        Eigen::MatrixXi isoE;
+        MatrixX isoV;
+
+        Eigen::MatrixXi testFaceNeighbors(1, 3);
+        testFaceNeighbors << -1, -1, -1;
+
+        extractIsoline(testV, testF, testFaceNeighbors, testCurvature, 0, isoV, isoE, extendedWrinklePos, extendedWrinkleFace);
+
+        double shiftx = testV.col(0).maxCoeff() - testV.col(0).minCoeff();
+        polyscope::registerSurfaceMesh("splitted wrinkles", extendedWrinklePos, extendedWrinkleFace);
+        polyscope::getSurfaceMesh("splitted wrinkles")->translate({2 * shiftx, 0, 0});
+
+        polyscope::registerPointCloud("0-isopoints", extendedWrinklePos.block(testV.rows(), 0, extendedWrinklePos.rows() - testV.rows(), 3));
+        polyscope::getPointCloud("0-isopoints")->translate({ 2 * shiftx, 0, 0 });
+
+        polyscope::view::resetCameraToHomeView();
+    }
+
 
 
 	ImGui::PopItemWidth();
@@ -248,7 +301,7 @@ int main(int argc, char** argv)
 	}
 
 	// Options
-	polyscope::options::autocenterStructures = true;
+//	polyscope::options::autocenterStructures = true;
 	polyscope::view::windowWidth = 1024;
 	polyscope::view::windowHeight = 1024;
 
