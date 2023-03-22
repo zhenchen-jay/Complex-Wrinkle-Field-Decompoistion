@@ -15,6 +15,7 @@
 #include <igl/remesh_along_isoline.h>
 #include <igl/principal_curvature.h>
 #include <igl/isolines.h>
+
 #include "polyscope/messages.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
@@ -36,6 +37,7 @@
 #include "../../Upsampling/ComplexLoop.h"
 #include "../../Decomposition/CWFDecomposition.h"
 #include "../../ExtractIsoline.h"
+#include "../../Decomposition/BaseMeshExtraction.h"
 
 
 #include <CLI/CLI.hpp>
@@ -238,28 +240,35 @@ void callback() {
         Eigen::MatrixXi extendedWrinkleFace;
         Eigen::MatrixXi isoE;
         MatrixX isoV;
-        extractIsoline(wrinkledPos, wrinkledFaces, wrinkledFaceNeighbors, meanCurvature, 0, isoV, isoE, extendedWrinklePos, extendedWrinkleFace);
+		basemeshExtraction(wrinkledMesh, extendedWrinklePos, extendedWrinkleFace, &isoV, &isoE);
+
+        //extractIsoline(wrinkledPos, wrinkledFaces, wrinkledFaceNeighbors, meanCurvature, 0, isoV, isoE, extendedWrinklePos, extendedWrinkleFace);
 
         double shiftx = wrinkledPos.col(0).maxCoeff() - wrinkledPos.col(0).minCoeff();
-        polyscope::registerSurfaceMesh("splitted wrinkles", extendedWrinklePos, extendedWrinkleFace);
-        polyscope::getSurfaceMesh("splitted wrinkles")->translate({2 * shiftx, 0, 0});
+        polyscope::registerSurfaceMesh("base surface", extendedWrinklePos, extendedWrinkleFace);
+        polyscope::getSurfaceMesh("base surface")->translate({ shiftx, 0, 0});
 
         polyscope::registerPointCloud("0-isopoints", extendedWrinklePos.block(wrinkledPos.rows(), 0, extendedWrinklePos.rows() - wrinkledPos.rows(), 3));
-        polyscope::getPointCloud("0-isopoints")->translate({ 2 * shiftx, 0, 0 });
+        polyscope::getPointCloud("0-isopoints")->translate({ shiftx, 0, 0 });
 
         polyscope::view::resetCameraToHomeView();
     }
 
     if (ImGui::Button("test split", ImVec2(-1, 0)))
     {
-        Eigen::MatrixXd testV(3, 3);
-        Eigen::MatrixXi testF(1, 3);
-        testV << 0, 0, 0,
-        1, 0, 0,
-        0, 1, 0;
-        testF << 0, 1, 2;
-        Eigen::VectorXd testCurvature(3);
-        testCurvature << -1, 1, 1;
+        Eigen::MatrixXd testV(5, 3);
+        Eigen::MatrixXi testF(4, 3);
+		testV << 0, 0, 0,
+			-1, -1, 0,
+			1, -1, 0,
+			1, 1, 0,
+			-1, 1, 0;
+        testF << 0, 1, 2,
+			0, 2, 3,
+			0, 3, 4,
+			0, 4, 1;
+        Eigen::VectorXd testCurvature(5);
+        testCurvature << -1, 1, 1, 1, 1;
 
 
         Eigen::MatrixXd extendedWrinklePos;
@@ -267,8 +276,22 @@ void callback() {
         Eigen::MatrixXi isoE;
         MatrixX isoV;
 
-        Eigen::MatrixXi testFaceNeighbors(1, 3);
-        testFaceNeighbors << -1, -1, -1;
+		Mesh testMesh;
+		testMesh.Populate(testV, testF);
+		Eigen::MatrixXi testFaceNeighbors(testF.rows(), 3);
+		for (int i = 0; i < testF.rows(); i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				int eid = testMesh.GetFaceEdges(i)[(j + 1) % 3];
+				if (testMesh.GetEdgeFaces(eid).size() == 1)
+					testFaceNeighbors(i, j) = -1;
+				else
+					testFaceNeighbors(i, j) = testMesh.GetEdgeFaces(eid)[0] != i ? testMesh.GetEdgeFaces(eid)[0] : testMesh.GetEdgeFaces(eid)[1];
+			}
+		}
+
+        
 
         extractIsoline(testV, testF, testFaceNeighbors, testCurvature, 0, isoV, isoE, extendedWrinklePos, extendedWrinkleFace);
 
