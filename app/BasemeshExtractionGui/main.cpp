@@ -60,6 +60,18 @@ double poisson = 0.44;
 PaintGeometry mPaint;
 CWFDecomposition decompModel;
 
+float baseSurfShiftx = 0;
+float baseSurfShifty = 0;
+float baseSurfShiftz = 0;
+
+float preShiftx = 0;
+float preShifty = 0;
+float preShiftz = 0;
+
+float boundx = 0;
+float boundy = 0;
+float boundz = 0;
+
 Eigen::MatrixXi wrinkledFaceNeighbors;
 
 int updateViewHelper(
@@ -234,6 +246,34 @@ void callback() {
     {
         updateView(false, true);
     }
+
+    if (ImGui::DragFloat("base surface shift x", &baseSurfShiftx, 0.05, 0, 4))
+    {
+        if(polyscope::hasSurfaceMesh("base surface"))
+        {
+            polyscope::getSurfaceMesh("base surface")->translate({ (baseSurfShiftx - preShiftx) * boundx, 0, 0});
+            preShiftx = baseSurfShiftx;
+        }
+    }
+
+    if (ImGui::DragFloat("base surface shift y", &baseSurfShifty, 0.05, 0, 4))
+    {
+        if(polyscope::hasSurfaceMesh("base surface"))
+        {
+            polyscope::getSurfaceMesh("base surface")->translate({ 0, (baseSurfShifty - preShifty) * boundy, 0 });
+            preShifty = baseSurfShifty;
+        }
+    }
+
+    if (ImGui::DragFloat("base surface shift z", &baseSurfShiftz, 0.05, 0, 4))
+    {
+        if(polyscope::hasSurfaceMesh("base surface"))
+        {
+            polyscope::getSurfaceMesh("base surface")->translate({ 0, 0, (baseSurfShiftz - preShiftz) * boundz });
+            preShiftz = baseSurfShiftz;
+        }
+    }
+
     if (ImGui::Button("Compute base surface", ImVec2(-1, 0)))
     {
         Eigen::MatrixXd extendedWrinklePos;
@@ -246,10 +286,14 @@ void callback() {
 
         double shiftx = wrinkledPos.col(0).maxCoeff() - wrinkledPos.col(0).minCoeff();
         polyscope::registerSurfaceMesh("base surface", extendedWrinklePos, extendedWrinkleFace);
-        polyscope::getSurfaceMesh("base surface")->translate({ shiftx, 0, 0});
+//        polyscope::getSurfaceMesh("base surface")->translate({ shiftx, 0, 0});
 
         polyscope::registerPointCloud("0-isopoints", extendedWrinklePos.block(wrinkledPos.rows(), 0, extendedWrinklePos.rows() - wrinkledPos.rows(), 3));
-        polyscope::getPointCloud("0-isopoints")->translate({ shiftx, 0, 0 });
+//        polyscope::getPointCloud("0-isopoints")->translate({ shiftx, 0, 0 });
+
+        boundx = extendedWrinklePos.col(0).maxCoeff() - extendedWrinklePos.col(0).minCoeff();
+        boundy = extendedWrinklePos.col(1).maxCoeff() - extendedWrinklePos.col(1).minCoeff();
+        boundz = extendedWrinklePos.col(2).maxCoeff() - extendedWrinklePos.col(2).minCoeff();
 
         polyscope::view::resetCameraToHomeView();
     }
