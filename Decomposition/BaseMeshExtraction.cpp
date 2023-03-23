@@ -5,6 +5,55 @@
 #include <igl/boundary_loop.h>
 #include <Eigen/CholmodSupport>
 
+void getBndProjectionMatrix(const MatrixX& pos, const Eigen::MatrixXi& faces, SparseMatrixX& bndProjM, SparseMatrixX* interiorProjM, std::vector<int>* bndVids, std::vector<bool>* bndFlags)
+{
+	int nverts = pos.rows();
+	std::vector<TripletX> bndT, interiorT;
+	std::vector<int> L;
+	igl::boundary_loop(faces, L);
+	std::vector<bool> flags(nverts, false);
+	for (auto& vid : L)
+		flags[vid] = true;
+
+	int nbnds = 0, ninterior = 0;
+	for (int i = 0; i < nverts; i++)
+	{
+		if (flags[i])
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				bndT.push_back({ 3 * nbnds + j, 3 * i + j, 1.0 });
+			}
+			nbnds++;
+		}
+		else
+		{
+			if (interiorProjM)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					interiorT.push_back({ 3 * ninterior + j, 3 * i + j, 1.0 });
+				}
+				ninterior++;
+			}
+			
+		}
+	}
+	bndProjM.resize(3 * nbnds, 3 * nverts);
+	bndProjM.setFromTriplets(bndT.begin(), bndT.end());
+
+	if (interiorProjM)
+	{
+		interiorProjM->resize(3 * ninterior, 3 * nverts);
+		interiorProjM->setFromTriplets(interiorT.begin(), interiorT.end());
+	}
+
+	if (bndVids)
+		*bndVids = L;
+	if (bndFlags)
+		*bndFlags = flags;
+}
+
 void basemeshExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::MatrixXi& basemeshFaces, MatrixX* isoPos, Eigen::MatrixXi* isoEdges)
 {
 	// prepare
@@ -54,10 +103,12 @@ void basemeshExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::M
 	};
 
 	// step 1: compute mean curvatures
-	Eigen::MatrixXd PD1, PD2;
-	Eigen::VectorXd PV1, PV2;
-	igl::principal_curvature(wrinkledPos, wrinkledFaces, PD1, PD2, PV1, PV2);
-	Eigen::VectorXd H = (PV1 + PV2) / 2;
+	//Eigen::MatrixXd PD1, PD2;
+	//Eigen::VectorXd PV1, PV2, H;
+	//igl::principal_curvature(wrinkledPos, wrinkledFaces, PD1, PD2, PV1, PV2);
+	//H = (PV1 + PV2) / 2;
+	Eigen::VectorXd H;
+	H.setRandom(wrinkledPos.rows());
 
 	// step 2: extract zero iso-pts and iso-lines
 	Eigen::MatrixXd isolinePos, splittedWrinkledPos;
@@ -115,51 +166,72 @@ void basemeshExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::M
 	projMat.setFromTriplets(T.begin(), T.end());
 
     // step 5.2: boundary and interior projection
-    std::vector<TripletX> bndT, interiorT;
-    std::vector<int> bndVids;
-    igl::boundary_loop(wrinkledFaces, bndVids);
-    std::vector<bool> bndFlags(nverts, false);
-    for(auto& vid : bndVids)
-        bndFlags[vid] = true;
+	SparseMatrixX bndProjMat, interiorProjMat;
+	std::vector<int> bndVids;
+	std::vector<bool> bndFlags;
+	getBndProjectionMatrix(wrinkledPos, wrinkledFaces, bndProjMat, &interiorProjMat, &bndVids, &bndFlags);
+	// test projection matrix
+	VectorX testPosVec = mat2vec(wrinkledPos);
+	VectorX bndPosVec = bndProjMat.transpose() * bndProjMat * testPosVec;
+	VectorX interiorPosVec = interiorProjMat.transpose() * interiorProjMat * testPosVec;
+	std::cout << testPosVec.norm() << " " << (testPosVec - bndPosVec - interiorPosVec).norm() << std::endl;
+	VectorX bndPosVec1(3 * bndVids.size());
+	for (int i = 0; i < bndVids.size(); i++)
+	{
+		bndPosVec1.segment<3>(3 * i) << wrinkledPos(bndVids[i], 0), wrinkledPos(bndVids[i], 1), wrinkledPos(bndVids[i], 2);
+	}
+	VectorX bndPosVec2(3 * bndVids.size());
+	for (int i = 0; i < bndVids.size(); i++)
+	{
+		bndPosVec2.segment<3>(3 * i) = testPosVec.segment<3>(3 * bndVids[i]);
+	}
 
-    int nbndsVars = 0, nintVars = 0;
-    for(int i = 0; i < nverts; i++)
-    {
-        if(bndFlags[i])
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                bndT.push_back({nbndsVars, 3 * i + j, 1.0});
-                nbndsVars++;
-            }
-        }
-        else
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                interiorT.push_back({nintVars, 3 * i + j, 1.0});
-                nintVars++;
-            }
-        }
-    }
-    SparseMatrixX bndProjMat(nbndsVars, 3 * nverts), interiorProjMat(nintVars, 3 * nverts);
-    bndProjMat.setFromTriplets(bndT.begin(), bndT.end());
-    interiorProjMat.setFromTriplets(interiorT.begin(), interiorT.end());
+
+	VectorX projBndVec = bndProjMat * testPosVec;
+	std::cout << "conversion error: " << (bndPosVec1 - projBndVec).norm() << ", " << (bndPosVec1 - bndPosVec2).norm() << ", " << (bndPosVec2 - projBndVec).norm() << std::endl;
 
     // step 5.3: form the boundary normal matrix
+	int nbnds = bndVids.size();
     MatrixX wrinkleNormals;
     igl::per_vertex_normals(wrinkledPos, wrinkledFaces, wrinkleNormals);
-    SparseMatrixX bndNormalMat(nbndsVars, bndVids.size());
+    SparseMatrixX bndNormalMat(3 * nbnds, nbnds);
     std::vector<TripletX> normalT;
     for(int i = 0; i < bndVids.size(); i++)
     {
         int vid = bndVids[i];
         for(int j = 0; j < 3; j++)
         {
-            normalT.push_back({3 * i + j, j, wrinkleNormals(vid, j)});
+            normalT.push_back({3 * i + j, i, wrinkleNormals(vid, j)});
         }
     }
     bndNormalMat.setFromTriplets(normalT.begin(), normalT.end());
+	// test bnd normal matrix
+	VectorX perterb(nbnds);
+	perterb.setRandom();
+	MatrixX perterbWrinklePos = wrinkledPos;
+	for (int i = 0; i < bndVids.size(); i++)
+	{
+		int vid = bndVids[i];
+		perterbWrinklePos.row(vid) = wrinkledPos.row(vid) + perterb[i] * wrinkleNormals.row(vid);
+	}
+	VectorX perterbY2 = bndProjMat * mat2vec(perterbWrinklePos);
+	VectorX Y20 = bndProjMat * mat2vec(wrinkledPos);
+	VectorX Y2 = Y20 + bndNormalMat * perterb;
+	VectorX Y21 = Y20;
+
+	std::cout << "error: " << (perterbY2 - Y2).norm() << std::endl;
+	//for (int i = 0; i < perterbY2.rows(); i++)
+	//{
+	//	if (i % 3 == 0)
+	//		std::cout << "vid: " << i / 3 << ", " << bndVids[i / 3] << std::endl;
+	//	std::cout << (perterbY2[i] - Y2[i]) << std::endl;
+	//}
+	for (int i = 0; i < bndVids.size(); i++)
+	{
+		int vid = bndVids[i];
+		Y21.segment<3>(3 * i) = Y20.segment<3>(i) + perterb[i] * wrinkleNormals.row(vid).segment<3>(0).transpose();
+	}
+	std::cout << "error: " << (perterbY2 - Y21).norm() << std::endl;
 
     // step 5.4: final projection matrix
     SparseMatrixX finalProjMatInterior = interiorProjMat * projMat;    // interior part

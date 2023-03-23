@@ -162,8 +162,12 @@ void updateView(bool isFirstTime = true, bool drawIsolines = false)
     if(isFirstTime)
     {
         MatrixX maxDir, minDir;
-        igl::principal_curvature(wrinkledPos, wrinkledFaces, minDir, maxDir, minCurvature, maxCurvature);
+        //igl::principal_curvature(wrinkledPos, wrinkledFaces, minDir, maxDir, minCurvature, maxCurvature);
+		minCurvature.setRandom(wrinkledPos.rows());
+		maxCurvature.setRandom(wrinkledPos.rows());
         meanCurvature = (minCurvature + maxCurvature) / 2;
+		meanCurvature[0] = -1;
+		
     }
 
     auto minCurvPattens = polyscope::getSurfaceMesh("reference wrinkled mesh")->addVertexScalarQuantity("min curvature", minCurvature);
@@ -311,6 +315,7 @@ void callback() {
 			0, 2, 3,
 			0, 3, 4,
 			0, 4, 1;
+		igl::writeOBJ("testSquare.obj", testV, testF);
         Eigen::VectorXd testCurvature(5);
         testCurvature << -1, 1, 1, 1, 1;
 
