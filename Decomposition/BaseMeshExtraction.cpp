@@ -4,16 +4,22 @@
 #include <igl/doublearea.h>
 #include <igl/boundary_loop.h>
 #include <Eigen/CholmodSupport>
+#include <igl/harmonic.h>
 
-void getBndProjectionMatrix(const MatrixX& pos, const Eigen::MatrixXi& faces, SparseMatrixX& bndProjM, SparseMatrixX* interiorProjM, std::vector<int>* bndVids, std::vector<bool>* bndFlags)
+int getBndProjectionMatrix(const MatrixX& pos, const Eigen::MatrixXi& faces, SparseMatrixX& bndProjM, SparseMatrixX* interiorProjM, std::vector<std::vector<int>>* bndVids, std::vector<bool>* bndFlags)
 {
 	int nverts = pos.rows();
 	std::vector<TripletX> bndT, interiorT;
-	std::vector<int> L;
+	std::vector<std::vector<int>> L;
 	igl::boundary_loop(faces, L);
 	std::vector<bool> flags(nverts, false);
-	for (auto& vid : L)
-		flags[vid] = true;
+
+	for (auto& bnd : L)
+    {
+        for(auto& vid : bnd)
+            flags[vid] = true;
+    }
+
 
 	int nbnds = 0, ninterior = 0;
 	for (int i = 0; i < nverts; i++)
@@ -52,6 +58,7 @@ void getBndProjectionMatrix(const MatrixX& pos, const Eigen::MatrixXi& faces, Sp
 		*bndVids = L;
 	if (bndFlags)
 		*bndFlags = flags;
+    return nbnds;
 }
 
 void basemeshExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::MatrixXi& basemeshFaces, MatrixX* isoPos, Eigen::MatrixXi* isoEdges)
@@ -103,12 +110,10 @@ void basemeshExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::M
 	};
 
 	// step 1: compute mean curvatures
-	//Eigen::MatrixXd PD1, PD2;
-	//Eigen::VectorXd PV1, PV2, H;
-	//igl::principal_curvature(wrinkledPos, wrinkledFaces, PD1, PD2, PV1, PV2);
-	//H = (PV1 + PV2) / 2;
-	Eigen::VectorXd H;
-	H.setRandom(wrinkledPos.rows());
+	Eigen::MatrixXd PD1, PD2;
+	Eigen::VectorXd PV1, PV2, H;
+	igl::principal_curvature(wrinkledPos, wrinkledFaces, PD1, PD2, PV1, PV2);
+	H = (PV1 + PV2) / 2;
 
 	// step 2: extract zero iso-pts and iso-lines
 	Eigen::MatrixXd isolinePos, splittedWrinkledPos;
@@ -167,71 +172,88 @@ void basemeshExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::M
 
     // step 5.2: boundary and interior projection
 	SparseMatrixX bndProjMat, interiorProjMat;
-	std::vector<int> bndVids;
+//	std::vector<int> bndVids;
 	std::vector<bool> bndFlags;
-	getBndProjectionMatrix(wrinkledPos, wrinkledFaces, bndProjMat, &interiorProjMat, &bndVids, &bndFlags);
+    int nbnds = getBndProjectionMatrix(wrinkledPos, wrinkledFaces, bndProjMat, &interiorProjMat, nullptr, &bndFlags);
 	// test projection matrix
-	VectorX testPosVec = mat2vec(wrinkledPos);
-	VectorX bndPosVec = bndProjMat.transpose() * bndProjMat * testPosVec;
-	VectorX interiorPosVec = interiorProjMat.transpose() * interiorProjMat * testPosVec;
-	std::cout << testPosVec.norm() << " " << (testPosVec - bndPosVec - interiorPosVec).norm() << std::endl;
-	VectorX bndPosVec1(3 * bndVids.size());
-	for (int i = 0; i < bndVids.size(); i++)
-	{
-		bndPosVec1.segment<3>(3 * i) << wrinkledPos(bndVids[i], 0), wrinkledPos(bndVids[i], 1), wrinkledPos(bndVids[i], 2);
-	}
-	VectorX bndPosVec2(3 * bndVids.size());
-	for (int i = 0; i < bndVids.size(); i++)
-	{
-		bndPosVec2.segment<3>(3 * i) = testPosVec.segment<3>(3 * bndVids[i]);
-	}
+//	VectorX testPosVec = mat2vec(wrinkledPos);
+//	VectorX bndPosVec = bndProjMat.transpose() * bndProjMat * testPosVec;
+//	VectorX interiorPosVec = interiorProjMat.transpose() * interiorProjMat * testPosVec;
+//	std::cout << testPosVec.norm() << " " << (testPosVec - bndPosVec - interiorPosVec).norm() << std::endl;
+//	VectorX bndPosVec1(3 * bndVids.size());
+//    int tmpRow = 0;
+//	for (int i = 0; i < bndFlags.size(); i++)
+//	{
+//        if(bndFlags[i])
+//        {
+//            bndPosVec1.segment<3>(3 * tmpRow) << wrinkledPos(i, 0), wrinkledPos(i, 1), wrinkledPos(i, 2);
+//            tmpRow++;
+//        }
+//
+//	}
+//    tmpRow = 0;
+//	VectorX bndPosVec2(3 * bndVids.size());
+//    for (int i = 0; i < bndFlags.size(); i++)
+//    {
+//        if(bndFlags[i])
+//        {
+//            bndPosVec2.segment<3>(3 * tmpRow) = testPosVec.segment<3>(3 * i);
+//            tmpRow++;
+//        }
+//	}
+//	VectorX projBndVec = bndProjMat * testPosVec;
+//	std::cout << "conversion error: " << (bndPosVec1 - projBndVec).norm() << ", " << (bndPosVec1 - bndPosVec2).norm() << ", " << (bndPosVec2 - projBndVec).norm() << std::endl;
 
-
-	VectorX projBndVec = bndProjMat * testPosVec;
-	std::cout << "conversion error: " << (bndPosVec1 - projBndVec).norm() << ", " << (bndPosVec1 - bndPosVec2).norm() << ", " << (bndPosVec2 - projBndVec).norm() << std::endl;
 
     // step 5.3: form the boundary normal matrix
-	int nbnds = bndVids.size();
     MatrixX wrinkleNormals;
     igl::per_vertex_normals(wrinkledPos, wrinkledFaces, wrinkleNormals);
     SparseMatrixX bndNormalMat(3 * nbnds, nbnds);
     std::vector<TripletX> normalT;
-    for(int i = 0; i < bndVids.size(); i++)
+    int bndRowId = 0;
+    for(int i = 0; i < nverts; i++)
     {
-        int vid = bndVids[i];
-        for(int j = 0; j < 3; j++)
+        if(bndFlags[i])
         {
-            normalT.push_back({3 * i + j, i, wrinkleNormals(vid, j)});
+            for(int j = 0; j < 3; j++)
+            {
+                normalT.push_back({3 * bndRowId + j, bndRowId, wrinkleNormals(i, j)});
+            }
+            bndRowId++;
         }
+
     }
     bndNormalMat.setFromTriplets(normalT.begin(), normalT.end());
 	// test bnd normal matrix
-	VectorX perterb(nbnds);
-	perterb.setRandom();
-	MatrixX perterbWrinklePos = wrinkledPos;
-	for (int i = 0; i < bndVids.size(); i++)
-	{
-		int vid = bndVids[i];
-		perterbWrinklePos.row(vid) = wrinkledPos.row(vid) + perterb[i] * wrinkleNormals.row(vid);
-	}
-	VectorX perterbY2 = bndProjMat * mat2vec(perterbWrinklePos);
-	VectorX Y20 = bndProjMat * mat2vec(wrinkledPos);
-	VectorX Y2 = Y20 + bndNormalMat * perterb;
-	VectorX Y21 = Y20;
-
-	std::cout << "error: " << (perterbY2 - Y2).norm() << std::endl;
-	//for (int i = 0; i < perterbY2.rows(); i++)
-	//{
-	//	if (i % 3 == 0)
-	//		std::cout << "vid: " << i / 3 << ", " << bndVids[i / 3] << std::endl;
-	//	std::cout << (perterbY2[i] - Y2[i]) << std::endl;
-	//}
-	for (int i = 0; i < bndVids.size(); i++)
-	{
-		int vid = bndVids[i];
-		Y21.segment<3>(3 * i) = Y20.segment<3>(i) + perterb[i] * wrinkleNormals.row(vid).segment<3>(0).transpose();
-	}
-	std::cout << "error: " << (perterbY2 - Y21).norm() << std::endl;
+//	VectorX perterb(nbnds);
+//	perterb.setRandom();
+//	MatrixX perterbWrinklePos = wrinkledPos;
+//    bndRowId = 0;
+//	for (int i = 0; i < nverts; i++)
+//	{
+//        if(bndFlags[i])
+//        {
+//            perterbWrinklePos.row(i) = wrinkledPos.row(i) + perterb[bndRowId] * wrinkleNormals.row(i);
+//            bndRowId++;
+//        }
+//
+//	}
+//	VectorX perterbY2 = bndProjMat * mat2vec(perterbWrinklePos);
+//	VectorX Y20 = bndProjMat * mat2vec(wrinkledPos);
+//	VectorX Y2 = Y20 + bndNormalMat * perterb;
+//	VectorX Y21 = Y20;
+//
+//	std::cout << "error: " << (perterbY2 - Y2).norm() << std::endl;
+//    bndRowId = 0;
+//    for (int i = 0; i < nverts; i++)
+//    {
+//        if(bndFlags[i])
+//        {
+//            Y21.segment<3>(3 * bndRowId) = Y20.segment<3>(3 * bndRowId) + perterb[bndRowId] * wrinkleNormals.row(i).segment<3>(0).transpose();
+//            bndRowId++;
+//        }
+//	}
+//	std::cout << "error: " << (perterbY2 - Y21).norm() << std::endl;
 
     // step 5.4: final projection matrix
     SparseMatrixX finalProjMatInterior = interiorProjMat * projMat;    // interior part
@@ -324,4 +346,69 @@ void basemeshExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::M
 //
 //    basemeshPos = vec2mat(y);
 //    basemeshFaces = wrinkledFaces;
+}
+
+void basemeshHarmonicExtraction(const Mesh& wrinkledMesh, MatrixX& basemeshPos, Eigen::MatrixXi& basemeshFaces, MatrixX* isoPos, Eigen::MatrixXi* isoEdges)
+{
+    // prepare
+    Eigen::MatrixXi wrinkledFaceNeighbors, wrinkledFaces;
+    Eigen::MatrixXd wrinkledPos;
+    wrinkledFaces = wrinkledMesh.GetFace();
+    wrinkledPos = wrinkledMesh.GetPos();
+
+    wrinkledFaceNeighbors.resize(wrinkledFaces.rows(), 3);
+    for(int i = 0; i < wrinkledFaces.rows(); i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            int eid = wrinkledMesh.GetFaceEdges(i)[(j + 1) % 3];
+            if(wrinkledMesh.GetEdgeFaces(eid).size() == 1)
+                wrinkledFaceNeighbors(i, j) = -1;
+            else
+                wrinkledFaceNeighbors(i, j) = wrinkledMesh.GetEdgeFaces(eid)[0] != i ? wrinkledMesh.GetEdgeFaces(eid)[0] : wrinkledMesh.GetEdgeFaces(eid)[1];
+        }
+    }
+
+    // step 1: compute mean curvatures
+    Eigen::MatrixXd PD1, PD2;
+    Eigen::VectorXd PV1, PV2, H;
+    igl::principal_curvature(wrinkledPos, wrinkledFaces, PD1, PD2, PV1, PV2);
+    H = (PV1 + PV2) / 2;
+
+    // step 2: extract zero iso-pts and iso-lines
+    Eigen::MatrixXd isolinePos, splittedWrinkledPos;
+    Eigen::MatrixXi isolineEdges, splittedWrinkledFaces;
+    extractIsoline(wrinkledPos, wrinkledFaces, wrinkledFaceNeighbors, H, 0, isolinePos, isolineEdges, splittedWrinkledPos, splittedWrinkledFaces);
+
+    std::vector<std::vector<int>> allBndVids;
+    igl::boundary_loop(wrinkledFaces, allBndVids);
+
+    std::vector<int> bndVids;   // merge all boundaries
+    for(auto bnd : allBndVids)
+    {
+        bndVids.insert(bndVids.end(), bnd.begin(), bnd.end());
+    }
+
+    // step 3: harmonic
+    int nisoPts = splittedWrinkledPos.rows() - wrinkledPos.rows();
+    Eigen::VectorXi bc(nisoPts + bndVids.size());
+    int nsplittedVerts = splittedWrinkledPos.rows();
+    int nverts = wrinkledPos.rows();
+
+    for(int i = nverts; i < nsplittedVerts; i++)
+    {
+        bc(i - nverts) = i;
+    }
+
+    Eigen::MatrixXd fixedPos = isolinePos;
+    fixedPos.conservativeResize(bndVids.size() + nisoPts, Eigen::NoChange);
+
+    for(int i = 0; i < bndVids.size(); i++)
+    {
+        bc(nisoPts + i) = bndVids[i];
+        fixedPos.row(nisoPts + i) = wrinkledPos.row(bndVids[i]);
+    }
+
+    igl::harmonic(splittedWrinkledPos, splittedWrinkledFaces, bc, fixedPos, 2, basemeshPos);
+    basemeshFaces = splittedWrinkledFaces;
 }

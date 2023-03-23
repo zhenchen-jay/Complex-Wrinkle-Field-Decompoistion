@@ -162,9 +162,7 @@ void updateView(bool isFirstTime = true, bool drawIsolines = false)
     if(isFirstTime)
     {
         MatrixX maxDir, minDir;
-        //igl::principal_curvature(wrinkledPos, wrinkledFaces, minDir, maxDir, minCurvature, maxCurvature);
-		minCurvature.setRandom(wrinkledPos.rows());
-		maxCurvature.setRandom(wrinkledPos.rows());
+        igl::principal_curvature(wrinkledPos, wrinkledFaces, minDir, maxDir, minCurvature, maxCurvature);
         meanCurvature = (minCurvature + maxCurvature) / 2;
 		meanCurvature[0] = -1;
 		
@@ -284,8 +282,8 @@ void callback() {
         Eigen::MatrixXi extendedWrinkleFace;
         Eigen::MatrixXi isoE;
         MatrixX isoV;
-		basemeshExtraction(wrinkledMesh, extendedWrinklePos, extendedWrinkleFace, &isoV, &isoE);
-
+//		basemeshExtraction(wrinkledMesh, extendedWrinklePos, extendedWrinkleFace, &isoV, &isoE);
+        basemeshHarmonicExtraction(wrinkledMesh, extendedWrinklePos, extendedWrinkleFace, &isoV, &isoE);
         //extractIsoline(wrinkledPos, wrinkledFaces, wrinkledFaceNeighbors, meanCurvature, 0, isoV, isoE, extendedWrinklePos, extendedWrinkleFace);
 
         double shiftx = wrinkledPos.col(0).maxCoeff() - wrinkledPos.col(0).minCoeff();
