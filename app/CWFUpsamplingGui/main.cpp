@@ -31,6 +31,7 @@
 #include "../../KnoppelStripePatterns.h"
 #include "../../Upsampling/BaseLoop.h"
 #include "../../Upsampling/ComplexLoop.h"
+#include "../../Upsampling/Subdivision.h"
 
 
 #include <CLI/CLI.hpp>
@@ -53,8 +54,6 @@ int upsampleTimes = 0;
 double wrinkleAmpRatio = 1.0;
 double secFrequencyRatio = 0;
 double secAmpRatio = 0;
-
-std::shared_ptr<BaseLoop> subOp;
 
 float vecratio = 0.1;
 bool isFixedBnd = false;
@@ -146,9 +145,7 @@ void updateView(bool isFirstTime = true)
 void subdivideMesh()
 {
     //upsampleTimes = 1;
-    subOp->SetMesh(baseMesh);
-    subOp->SetBndFixFlag(isFixedBnd);
-    subOp->CWFSubdivide(baseCWF, upCWF, upsampleTimes);
+    ComplexWrinkleField::Subdivide(baseCWF, upCWF, upsampleTimes, isFixedBnd);
 
     upMesh = upCWF._mesh;
     upMesh.GetPos(upV);
@@ -183,7 +180,7 @@ void subdivideMesh()
         roundZvalsFromEdgeOmegaVertexMag(baseMesh, omega1, amp1, edgeArea, vertArea, amp1.rows(), zvals1);
         baseCWF1 = CWF(amp1, omega1, normalizeZvals(zvals1), baseMesh);
 
-        subOp->CWFSubdivide(baseCWF1, upCWF1, upsampleTimes);
+        ComplexWrinkleField::Subdivide(baseCWF1, upCWF1, upsampleTimes, isFixedBnd);
         rescaleZvals(upCWF1._zvals, upCWF1._amp, upZvals1);
         std::cout << "second subdivision done" << std::endl;
 
@@ -301,7 +298,6 @@ bool loadProblem(std::string loadFileName = "")
 
     }
     std::cout << "start to subdivide" << std::endl;
-    subOp = std::make_shared<ComplexLoop>();
     baseCWF = CWF(amp, omega, normalizeZvals(zvals), baseMesh);
 
     subdivideMesh();

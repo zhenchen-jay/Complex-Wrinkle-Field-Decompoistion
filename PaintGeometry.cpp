@@ -1,18 +1,6 @@
 #include <memory>
-#include <Eigen/Dense>
-#include <Eigen/Eigenvalues>
 #include <igl/jet.h>
-#include <igl/gaussian_curvature.h>
-#include <igl/principal_curvature.h>
-#include <igl/per_face_normals.h>
-#include <igl/massmatrix.h>
-#include <igl/readOBJ.h>
-#include <igl/invert_diag.h>
 #include <igl/hsv_to_rgb.h>
-#include <igl/boundary_loop.h>
-#include <igl/boundary_facets.h>
-#include <igl/hsv_to_rgb.h>
-#include <igl/adjacency_list.h>
 
 
 #include "PaintGeometry.h"
@@ -50,21 +38,6 @@ Eigen::MatrixXd PaintGeometry::paintPhi(const Eigen::VectorXd& phi, Eigen::Vecto
             color(i, 2) = b;
         }
     }
-
-    return color;
-
-
-}
-
-Eigen::MatrixXd PaintGeometry::paintAmplitude(const Eigen::VectorXd& amplitude)
-{
-    int nverts = amplitude.size();
-    Eigen::VectorXd trueAmp = amplitude;
-
-    // std::cout << "amplitude: " << trueAmp.minCoeff() << " " << trueAmp.maxCoeff() << std::endl;
-
-    Eigen::MatrixXd color(nverts, 3);
-    igl::jet(trueAmp, isNormalize, color);
 
     return color;
 }

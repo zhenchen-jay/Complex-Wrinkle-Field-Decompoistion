@@ -30,14 +30,17 @@
 #include "../../KnoppelStripePatterns.h"
 #include "../../Upsampling/BaseLoop.h"
 #include "../../Upsampling/ComplexLoop.h"
+#include "../../Upsampling/Subdivision.h"
 #include "../../Decomposition/CWFDecomposition.h"
+
 
 
 #include <CLI/CLI.hpp>
 
 
 #include <igl/triangle/triangulate.h>
-void generateShearingCase()
+
+static void generateShearingCase()
 {
 	Eigen::MatrixXd planeV(4, 2);
 	Eigen::MatrixXi planeE(4, 2);
@@ -76,10 +79,9 @@ void generateShearingCase()
 	// upsampling
 	Mesh triMesh;
 	triMesh.Populate(triV, triF);
-	std::shared_ptr<BaseLoop> loopOp = std::make_shared<ComplexLoop>();
-	loopOp->SetBndFixFlag(true);
-	loopOp->SetMesh(triMesh);
-	Mesh upMesh = loopOp->meshSubdivide(3);
+
+    Mesh upMesh;
+    ComplexWrinkleField::Subdivide(triMesh, upMesh, 3, true);
 
 	upTriV = upMesh.GetPos();
 	upF = upMesh.GetFace();
@@ -233,9 +235,7 @@ void subdivideMeshHelper(
 	MatrixX& upsampledFaceOmega, VectorX& upsampledPhase, VectorX& upsampledAmp
 	)
 {
-	std::shared_ptr<BaseLoop> subOp;
-	subOp = std::make_shared<ComplexLoop>();
-	subOp->CWFSubdivide(cwf, upcwf, upLevel);
+    ComplexWrinkleField::Subdivide(cwf, upcwf, upLevel, isFixedBoundary);
 
 	rescaleZvals(upcwf._zvals, upcwf._amp, upsampledZvals);
 	upsampledMesh = upcwf._mesh;
@@ -432,7 +432,7 @@ void callback() {
 		Mesh refWrinkledMesh = refUpMesh;
         refWrinkledMesh.SetPos(refWrinkledV);
 
-		CWFDecomposition decompModel(refWrinkledMesh);
+		ComplexWrinkleField::CWFDecomposition decompModel(refWrinkledMesh);
 		decompModel.initialization(baseCWF, upsampleTimes);
 
 		decompModel.optimizePhase();
@@ -453,11 +453,8 @@ void callback() {
 
 int main(int argc, char** argv)
 {
-	generateShearingCase();
-	return 0;
-
 	std::string inputFile = "";
-	CLI::App app("Wrinkle Upsampling");
+	CLI::App app("Complex Wrinkle Field Decomposition");
 	app.add_option("input,-i,--input", inputFile, "Input model")->check(CLI::ExistingFile);
 
 	try {

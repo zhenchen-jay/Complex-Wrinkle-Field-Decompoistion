@@ -1,29 +1,20 @@
 #pragma once
 #include "BaseLoop.h"
 
-class ComplexLoop : public BaseLoop	// We modify the Loop.h
-{
-public:
-    void virtual CWFSubdivide(
-        const CWF& cwf,								// input CWF
-        CWF& upcwf,									// output CWF
-        int level,
-        SparseMatrixX* upS0 = NULL,					// upsampled matrix for scalar
-        SparseMatrixX* upS1 = NULL,					// upsampled matrix for one form
-        ComplexSparseMatrixX* upComplexS0 = NULL	// upsampled matrix for complex scalar
-    ) override;
-    void virtual BuildComplexS0(const VectorX& omega, ComplexSparseMatrixX& A) override;
+namespace ComplexWrinkleField {
+    class ComplexLoop : public BaseLoop	// We modify the Loop.h
+    {
+    public:
+        void virtual BuildComplexS0(const VectorX& omega, ComplexSparseMatrixX& A) const override;
 
-private:
-    // debug function
-    void BuildComplexS0Debug(const ComplexVectorX &zvals, const VectorX& omega, ComplexSparseMatrixX& A, ComplexVectorX &upZvals);
-    
-private:
-    std::vector<std::complex<double>> computeComplexWeight(const std::vector<Vector3>& pList, const std::vector<Vector3>& gradThetaList, const std::vector<double>& pWeights);
-    std::vector<std::complex<double>> computeEdgeComplexWeight(const VectorX& omega, const Vector2& bary, int eid);
-    std::vector<std::complex<double>> computeTriangleComplexWeight(const VectorX& omega, const Vector3& bary, int fid);
+    private:
+        std::vector<std::complex<double>> ComputeComplexWeight(const std::vector<Vector3>& pList, const std::vector<Vector3>& gradThetaList, const std::vector<double>& pWeights) const;
+        std::vector<std::complex<double>> ComputeEdgeComplexWeight(const VectorX& omega, const Vector2& bary, int eid) const;
+        std::vector<std::complex<double>> ComputeTriangleComplexWeight(const VectorX& omega, const Vector3& bary, int fid) const;
 
-    std::vector<std::complex<double>> computeComplexWeight(const std::vector<double>& dthetaList, const std::vector<double>& coordList);
-    Eigen::Vector3d computeBaryGradThetaFromOmegaPerface(const VectorX& omega, int fid, const Vector3& bary);
-    Eigen::Vector3d computeGradThetaFromOmegaPerface(const VectorX& omega, int fid, int vInF);
-};
+        std::vector<std::complex<double>> ComputeComplexWeight(const std::vector<double>& dthetaList, const std::vector<double>& coordList) const;
+        Eigen::Vector3d ComputeBaryGradThetaFromOmegaPerface(const VectorX& omega, int fid, const Vector3& bary) const;
+        Eigen::Vector3d ComputeGradThetaFromOmegaPerface(const VectorX& omega, int fid, int vInF) const;
+    };
+}
+

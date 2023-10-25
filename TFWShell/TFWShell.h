@@ -16,7 +16,8 @@
 #include "../MeshLib/MeshGeometry.h"
 #include "../CommonTools.h"
 
-	class TFWShell
+namespace  WrinkledTensionField {
+    class TFWShell
     {
     public:
         TFWShell()
@@ -143,3 +144,4 @@
         Eigen::MatrixXd _PD1;
         Eigen::MatrixXd _PD2;
     };
+}

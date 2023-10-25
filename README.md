@@ -1,5 +1,5 @@
-# Complex Wrinkle Field Evolution
-This repository is the implementation of the paper: "Complex Wrinkle Field Evolution".
+# Complex Wrinkle Field Decomposition
+This repository is the follow up work of the paper: "Complex Wrinkle Field Evolution".
 
 ## To download
 ```
@@ -45,28 +45,18 @@ mkdir build
 cd build
 cmake ..
 make -j4
-./bin/WrinkleInterpolationGui_bin -i ../data/bunny_localRotation/data.json
 ```
-
-## Results
-Once you run the command, a GUI will pop up. Then, click on "Solve" and the local rotation bunny results, as shown in the paper, will be displayed.
-
-![bunny_local_rotation](https://user-images.githubusercontent.com/29785561/188839142-906f3b2e-1051-458d-9c80-bd189e9bca07.gif)
-
-
-## Other features
-There are two extra executable programs provided: 
-- WrinkleInterpolationCli_bin: a command line version of our interpolation app, which can be run by
+It contains several executable files. 
+- `CWFUpsamplingGui_bin` is the one used to visualize the upsampling results
+- `CWFDecompositionGui_bin` is the decomposition algorithm under development
+To run them, you can try
 ```
-./bin/WrinkleInterpolationCli_bin -i ../data/bunny_localRotation/data.json -r 
+./CWFUpsamplingGui_bin -i data/bunny/data.json
 ```
-where -r option forces the program to reoptimize the problem
-
-- UserWrinkleDesign_bin: a tool for users to design wrinkles by themselves by assign frequency field and amplitude. This can be executed with
+or
 ```
-./bin/UserWrinkleDesign_bin -i ../data/bunny_localRotation/design.json 
-``` 
-where the bunny wrinkles can be extracted by clicking on "run smoothest vector field", with "freq" setting to 62.83185 (20 pi) and "amp" equal to "0.01". Note that this app has not undergone full testing for robustness and there may be some GUI crash bugs.
+./CWFDecompositionGui_bin -i data/bunny/data.json
+```
 
 
 ## Issues
