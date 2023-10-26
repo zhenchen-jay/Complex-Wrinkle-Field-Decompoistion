@@ -9,8 +9,8 @@ public:
         : isNormalize(true)
 	{}
 	~PaintGeometry() {}
-	void setNormalization(bool flag) { isNormalize = flag; }
-	Eigen::MatrixXd paintPhi(const Eigen::VectorXd& phi, Eigen::VectorXd* brightness = NULL);    // brightness should between 0 and 1
+	void SetNormalization(bool flag) { isNormalize = flag; }
+	Eigen::MatrixXd PaintPhi(const Eigen::VectorXd& phi, Eigen::VectorXd* brightness = NULL);    // brightness should between 0 and 1
 
 private:
 	bool isNormalize;

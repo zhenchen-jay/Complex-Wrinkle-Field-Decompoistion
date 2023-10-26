@@ -15,9 +15,16 @@ public:
   
 
 protected:
-  virtual void _AssembleVertEvenInterior(int vi, TripletInserter out) const override;
-  virtual void _AssembleVertEvenBoundary(int vi, TripletInserter out) const override;
-  virtual void _AssembleVertOddInterior(int edge, TripletInserter out) const override;
-  virtual void _AssembleVertOddBoundary(int edge, TripletInserter out) const override;
+  // Loop rules for interior even vertices
+  virtual void AssembleVertEvenInterior(int vi, TripletInserter out) const override;
+
+  // Loop rules for boundary even vertices
+  virtual void AssembleVertEvenBoundary(int vi, TripletInserter out) const override;
+
+  // Loop rules for interior odd vertices
+  virtual void AssembleVertOddInterior(int edge, TripletInserter out) const override;
+
+  // Loop rules for boundary odd vertices
+  virtual void AssembleVertOddBoundary(int edge, TripletInserter out) const override;
 };
 } // namespace ComplexWrinkleField

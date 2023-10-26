@@ -1,13 +1,15 @@
 #include "ComplexLoop.h"
-#include "../CommonTools.h"
 
 namespace ComplexWrinkleField {
-void ComplexLoop::_AssembleVertEvenInterior(int vi, TripletInserter out) const {
+/***** Loop subdivision for 0-form (per-vertex complex value, [Chen et al, 2023]) *****/
+// Loop rules for interior even vertices
+void ComplexLoop::AssembleVertEvenInterior(int vi, TripletInserter out) const {
   // Fig13(a) left in [Chen et al. 2023]
   const std::vector<int>& vFaces = _mesh->GetVertFaces(vi);
   int nNeiFaces = vFaces.size();
 
-  Scalar alpha = _GetAlpha(vi);
+  Scalar alpha = GetAlpha(vi);
+  int row = GetVertVertIndex(vi);
 
   Scalar beta = nNeiFaces / 2. * alpha;
 
@@ -41,16 +43,18 @@ void ComplexLoop::_AssembleVertEvenInterior(int vi, TripletInserter out) const {
   for (int j = 0; j < nNeiFaces; j++) {
     for (int k = 0; k < 3; k++) {
       std::complex<Scalar> cjk = outerWeights[j] * innerWeights[j][k];
-      FillTriplets(vi, faceVertMap[j][k], _mesh->GetVertCount() + _mesh->GetEdgeCount(), _mesh->GetVertCount(), cjk,
+      FillTriplets(row, faceVertMap[j][k], _mesh->GetVertCount() + _mesh->GetEdgeCount(), _mesh->GetVertCount(), cjk,
                    out);
     }
   }
 }
 
-void ComplexLoop::_AssembleVertEvenBoundary(int vi, TripletInserter out) const {
+// Loop rules for boundary even vertices
+void ComplexLoop::AssembleVertEvenBoundary(int vi, TripletInserter out) const {
   // Fig13(a) right in [Chen et al. 2023]
+  int row = GetVertVertIndex(vi);
   if (_isFixBnd) {
-    FillTriplets(vi, vi, _mesh->GetVertCount() + _mesh->GetEdgeCount(), _mesh->GetVertCount(), 1.0, out);
+    FillTriplets(row, vi, _mesh->GetVertCount() + _mesh->GetEdgeCount(), _mesh->GetVertCount(), 1.0, out);
   } else {
     std::vector<int> boundary(2);
     boundary[0] = _mesh->GetVertEdges(vi).front();
@@ -95,14 +99,15 @@ void ComplexLoop::_AssembleVertEvenBoundary(int vi, TripletInserter out) const {
     for (int j = 0; j < 2; j++) {
       for (int k = 0; k < 2; k++) {
         std::complex<Scalar> cjk = outerWeights[j] * innerWeights[j][k];
-        FillTriplets(vi, edgeVertMap[j][k], _mesh->GetVertCount() + _mesh->GetEdgeCount(), _mesh->GetVertCount(), cjk,
+        FillTriplets(row, edgeVertMap[j][k], _mesh->GetVertCount() + _mesh->GetEdgeCount(), _mesh->GetVertCount(), cjk,
                      out);
       }
     }
   }
 }
 
-void ComplexLoop::_AssembleVertOddInterior(int edge, TripletInserter out) const {
+// Loop rules for interior odd vertices
+void ComplexLoop::AssembleVertOddInterior(int edge, TripletInserter out) const {
   // Fig13(b) left in [Chen et al. 2023]
   std::vector<Vector3> gradthetap(2);
   std::vector<Scalar> coords = {1. / 2, 1. / 2};
@@ -111,7 +116,7 @@ void ComplexLoop::_AssembleVertOddInterior(int edge, TripletInserter out) const 
   std::vector<std::complex<Scalar>> outerWeights(2);
   std::vector<std::vector<int>> faceVertMap(2, {-1, -1, -1});
 
-  int row = _GetEdgeVertIndex(edge);
+  int row = GetEdgeVertIndex(edge);
 
   for (int j = 0; j < 2; ++j) {
     int face = _mesh->GetEdgeFaces(edge)[j];
@@ -140,11 +145,12 @@ void ComplexLoop::_AssembleVertOddInterior(int edge, TripletInserter out) const 
   }
 }
 
-void ComplexLoop::_AssembleVertOddBoundary(int edge, TripletInserter out) const {
+// Loop rules for boundary odd vertices
+void ComplexLoop::AssembleVertOddBoundary(int edge, TripletInserter out) const {
   // Fig13(b) right in [Chen et al. 2023]
   Vector2 bary;
   bary << 0.5, 0.5;
-  int row = _GetEdgeVertIndex(edge);
+  int row = GetEdgeVertIndex(edge);
   std::vector<std::complex<Scalar>> complexWeight = ComputeEdgeComplexWeight(bary, edge);
   FillTriplets(row, _mesh->GetEdgeVerts(edge)[0], _mesh->GetVertCount() + _mesh->GetEdgeCount(), _mesh->GetVertCount(),
                complexWeight[0], out);
@@ -152,9 +158,11 @@ void ComplexLoop::_AssembleVertOddBoundary(int edge, TripletInserter out) const 
                complexWeight[1], out);
 }
 
+// Barycentrically blend the z values from the corner of the polygon:
+// the angle contribution from each point given by dthetaList[i]. Then z = \sum pWeight[i] * exp(dthetaList[i]) * z(p_i).
 std::vector<std::complex<Scalar>> ComplexLoop::ComputeComplexWeight(const std::vector<Scalar>& dthetaList,
                                                                     const std::vector<Scalar>& coordList) const {
-  // The generalization of Equation (19) in [Chen et al, 2023], where dthetaList[i] is the theta change contribution from point i
+  // The generalization of Equation (19) in [Chen et al, 2023]
   int nPoints = dthetaList.size();
   std::vector<std::complex<Scalar>> complexWeights(nPoints, 0);
 
@@ -164,9 +172,13 @@ std::vector<std::complex<Scalar>> ComplexLoop::ComputeComplexWeight(const std::v
   return complexWeights;
 }
 
+// Barycentrically blend the z values from the corner of the polygon:
+// The new position is given as \sum pWeights[i] * pList[i], the angle contribution for the i-th point is:
+// dtheta_i = gradThetaList[i].dot(p - pList[i]). Then z = \sum pWeight[i] * exp(dtheta_i) * z(p_i).
 std::vector<std::complex<Scalar>> ComplexLoop::ComputeComplexWeightFromGradTheta(const std::vector<Vector3>& pList,
                                                                     const std::vector<Vector3>& gradThetaList,
                                                                     const std::vector<Scalar>& pWeights) const {
+  // The generalization of Equation (19) in [Chen et al, 2023]
   int nPoints = pList.size();
   std::vector<Scalar> dthetaList(nPoints, 0);
 
@@ -181,7 +193,9 @@ std::vector<std::complex<Scalar>> ComplexLoop::ComputeComplexWeightFromGradTheta
   return ComputeComplexWeight(dthetaList, pWeights);
 }
 
+// Barycentrially blender the z value, where the new position point is on the edge
 std::vector<std::complex<Scalar>> ComplexLoop::ComputeEdgeComplexWeight(const Vector2& bary, int eid) const {
+  // Equation (18) in [Chen et al, 2023]
   Scalar edgeOmega = (*_omega)[eid]; // one form, refered as theta[e1] - theta[e0]
   Scalar dtheta0 = bary[1] * edgeOmega;
   Scalar dtheta1 = -bary[0] * edgeOmega;
@@ -192,7 +206,9 @@ std::vector<std::complex<Scalar>> ComplexLoop::ComputeEdgeComplexWeight(const Ve
   return ComputeComplexWeight(dthetaList, coordList);
 }
 
+// Barycentrially blender the z value, where the new position point is on the face
 std::vector<std::complex<Scalar>> ComplexLoop::ComputeTriangleComplexWeight(const Vector3& bary, int fid) const {
+  // Equation (19) in [Chen et al, 2023]
   std::vector<Scalar> coordList = {bary[0], bary[1], bary[2]};
   std::vector<Scalar> dthetaList(3, 0);
   const std::vector<int>& vertList = _mesh->GetFaceVerts(fid);
@@ -214,9 +230,9 @@ std::vector<std::complex<Scalar>> ComplexLoop::ComputeTriangleComplexWeight(cons
   return ComputeComplexWeight(dthetaList, coordList);
 }
 
-
-Vector3 ComplexLoop::ComputeGradThetaFromOmegaPerface(int fid, int vInF) const {
-  int vid = _mesh->GetFaceVerts(fid)[vInF];
+// For each vertex on the face, compute the approximate gradient of theta from edge 1-forms.
+Vector3 ComplexLoop::ComputeGradThetaFromOmegaPerfaceCorner(int fid, int vInF) const {
+  // Equation (52) in S.I.of [Chen et al, 2023]
   int eid0 = _mesh->GetFaceEdges(fid)[vInF];
   int eid1 = _mesh->GetFaceEdges(fid)[(vInF + 2) % 3];
   Vector3 r0 = _mesh->GetVertPos(_mesh->GetEdgeVerts(eid0)[1]) - _mesh->GetVertPos(_mesh->GetEdgeVerts(eid0)[0]);
@@ -233,10 +249,11 @@ Vector3 ComplexLoop::ComputeGradThetaFromOmegaPerface(int fid, int vInF) const {
   return u[0] * r0 + u[1] * r1;
 }
 
+// Barycentrically blend the gradient of theta from face corners
 Vector3 ComplexLoop::ComputeBaryGradThetaFromOmegaPerface(int fid, const Vector3& bary) const {
   Vector3 gradTheta = Vector3::Zero();
   for (int i = 0; i < 3; i++) {
-    gradTheta += bary[i] * ComputeGradThetaFromOmegaPerface(fid, i);
+    gradTheta += bary[i] * ComputeGradThetaFromOmegaPerfaceCorner(fid, i);
   }
   return gradTheta;
 }

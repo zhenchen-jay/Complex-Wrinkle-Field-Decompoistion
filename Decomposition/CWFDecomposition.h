@@ -1,97 +1,91 @@
 #pragma once
+#include <unordered_set>
+
 #include "../../CommonTools.h"
 #include "../../Upsampling/ComplexLoop.h"
 #include "../../Upsampling/BaseLoop.h"
 #include "../../TFWShell/TFWShell.h"
-
-#include <unordered_set>
+#include "../../CWF.h"
 
 namespace ComplexWrinkleField {
-    class CWFDecomposition
-    {
+    class CWFDecomposition {
     public:
-        CWFDecomposition(){}
-        CWFDecomposition(const Mesh& wrinkledMesh)
-        {
-            setWrinkledMesh(wrinkledMesh);
+        CWFDecomposition() {}
+        CWFDecomposition(const Mesh &wrinkledMesh) {
+            SetWrinkledMesh(wrinkledMesh);
         }
 
-        void setWrinkledMesh(const Mesh& wrinkledMesh)
-        {
+        void SetWrinkledMesh(const Mesh &wrinkledMesh) {
             _wrinkledMesh = wrinkledMesh;
             _wrinkledMesh.GetPos(_wrinkledV);
             _wrinkledMesh.GetFace(_wrinkledF);
         }
-        void initialization(const CWF& cwf, int upsampleTimes);
-        void initialization(const CWF& cwf, int upSampleTimes,
-                            const Mesh& restMesh,               // rest (coarse) mesh
-                            const Mesh& restWrinkleMesh,        // rest (wrinkle) mesh
-                            const Mesh& wrinkledMesh,           // target wrinkle mesh (for decomposition)
+        void Initialization(const CWF &cwf, int upsampleTimes);
+        void Initialization(const CWF &cwf, int upSampleTimes,
+                            const Mesh &restMesh,               // rest (coarse) mesh
+                            const Mesh &restWrinkleMesh,        // rest (wrinkle) mesh
+                            const Mesh &wrinkledMesh,           // target wrinkle mesh (for decomposition)
                             double youngsModulus,               // Young's Modulus
                             double poissonRatio,                // Poisson's Ratio
                             double thickness                    // thickness
         );
 
-        void initialization(int upSampleTimes,
+        void Initialization(int upSampleTimes,
                             bool isFixedBnd,                            // fixed bnd for loop
-                            const Mesh& restMesh,                       // rest (coarse) mesh
-                            const Mesh& baseMesh,                       // base (coarse) mesh
-                            const Mesh& restWrinkleMesh,                // rest (wrinkle) mesh
-                            const Mesh& wrinkledMesh,                   // target wrinkle mesh (for decomposition)
+                            const Mesh &restMesh,                       // rest (coarse) mesh
+                            const Mesh &baseMesh,                       // base (coarse) mesh
+                            const Mesh &restWrinkleMesh,                // rest (wrinkle) mesh
+                            const Mesh &wrinkledMesh,                   // target wrinkle mesh (for decomposition)
                             double youngsModulus,                       // Young's Modulus
                             double poissonRatio,                        // Poisson's Ratio
                             double thickness,                           // thickness
-                            const std::unordered_set<int>& clampedVert  // clamped vertices
+                            const std::unordered_set<int> &clampedVert  // clamped vertices
         );
 
-        void initialization(
-                const CWF& cwf,
-                int upSampleTimes,
-                bool isFixedBnd,                            // fixed bnd for loop
-                const Mesh& restMesh,                       // rest (coarse) mesh
-                const Mesh& restWrinkleMesh,                // rest (wrinkle) mesh
-                const Mesh& wrinkledMesh,                   // target wrinkle mesh (for decomposition)
-                double youngsModulus,                       // Young's Modulus
-                double poissonRatio,                        // Poisson's Ratio
-                double thickness,                           // thickness
-                const std::unordered_set<int>& clampedVert  // clamped vertices
+        void Initialization(const CWF &cwf, int upSampleTimes,
+                            bool isFixedBnd,                            // fixed bnd for loop
+                            const Mesh &restMesh,                       // rest (coarse) mesh
+                            const Mesh &restWrinkleMesh,                // rest (wrinkle) mesh
+                            const Mesh &wrinkledMesh,                   // target wrinkle mesh (for decomposition)
+                            double youngsModulus,                       // Young's Modulus
+                            double poissonRatio,                        // Poisson's Ratio
+                            double thickness,                           // thickness
+                            const std::unordered_set<int> &clampedVert  // clamped vertices
         );
 
-        void initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess, Eigen::VectorXd& amp, Eigen::MatrixXd& faceOmega);
+        void InitializeAmpOmega(const Eigen::MatrixXd &curPos, MeshConnectivity &curMeshCon, double ampGuess, Eigen::VectorXd &amp, Eigen::MatrixXd &faceOmega);
         /*
-         * initialize amp and omega based on the compression amount.
-         * REQUIRE: tfwshell has been initialized! (providing foundamental forms)
+         * Initialize amp and omega based on the compression amount.
+         * REQUIRE: tfwshell has been initialized! (providing fundamental forms)
          */
 
-        void getCWF(CWF &baseCWF);
+        void GetCWF(CWF &baseCWF);
 
-        void optimizeCWF();
+        void OptimizeCWF();
 
-        void optimizeAmpOmega();
-        void precomputationForPhase();
-        void optimizePhase();
-        void precomptationForBaseMesh();
-        void optimizeBasemesh();
+        void OptimizeAmpOmega();
+        void PrecomputationForPhase();
+        void OptimizePhase();
+        void PrecomputationForBaseMesh();
+        void OptimizeBasemesh();
 
+        // Vertex phase update energies
+        double ComputeDifferenceFromZvals(const VectorX &zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
+        double ComputeCompatibilityEnergy(const VectorX &omega, const VectorX &zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
+        // Compute compatibility between omega (_baseCWF.omega) and zvals
+        double ComputeUnitNormEnergy(const VectorX &zval, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr, bool isProj = true);
 
-        // vertex phase update energies
-        double computeDifferenceFromZvals(const VectorX& zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
-        double computeCompatibilityEnergy(const VectorX& omega, const VectorX& zvals, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
-        // compute compatibility between omega (_baseCWF.omega) and zvals
-        double computeUnitNormEnergy(const VectorX& zval, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr, bool isProj = true);
+        void TestDifferenceFromZvals(const VectorX &zvals);
 
-        void testDifferenceFromZvals(const VectorX& zvals);
-
-        // base mesh update energies
-        double computeDifferenceFromBasemesh(const MatrixX& pos, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
-        VectorX flatMatrix(const MatrixX& x);
-        MatrixX unFlatVector(const VectorX& v, Eigen::Index cols);
-        void testDifferenceFromBasemesh(const MatrixX& pos);
+        // Base mesh update energies
+        double ComputeDifferenceFromBasemesh(const MatrixX &pos, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
+        VectorX FlatMatrix(const MatrixX &x);
+        MatrixX UnFlatVector(const VectorX &v, Eigen::Index cols);
+        void TestDifferenceFromBasemesh(const MatrixX &pos);
 
     private:
-        void buildProjectionMat(const std::unordered_set<int>& clampedVerts, const MeshConnectivity& meshCon, int nverts);
-        void updateWrinkleCompUpMat();
-
+        void BuildProjectionMat(const std::unordered_set<int> &clampedVerts, const MeshConnectivity &meshCon, int nverts);
+        void UpdateWrinkleCompUpMat();
 
     private:
         CWF _baseCWF;
@@ -105,33 +99,32 @@ namespace ComplexWrinkleField {
         std::unordered_set<int> _clampedVertices;
         int _upsampleTimes;
 
-        WrinkledTensionField::TFWShell tfwShell;
-        // material parameters
+        WrinkledTensionField::TFWShell _tfwShell;
+        // Material parameters
         double _youngsModulus;
         double _poissonRatio;
         double _thickness;
-        // base mesh get edge (fixed as the initial ones)
+        // Base mesh get edge (fixed as the initial ones)
         VectorX _baseEdgeArea, _baseVertArea;
         VectorX _upVertArea;
 
-        // upsample Amp
+        // Upsample Amp
         VectorX _upAmp;
 
-        // precomputations for amp omega
+        // Precomputations for amp omega
         std::unordered_set<int> _clampedAmpOmega;
-        SparseMatrixX _projTFWMat;         // handle the fix verts
+        SparseMatrixX _projTFWMat;         // Handle the fix verts
         SparseMatrixX _unprojTFWMat;
         int _nFreeAmp;
         int _nFreeOmega;
 
-        // precomputations for phase
+        // Precomputations for phase
         SparseMatrixX _zvalDiffHess, _zvalCompHess;
         VectorX _zvalDiffCoeff;
 
-        // precomputations for basemesh
+        // Precomputations for base mesh
         MatrixX _normalWrinkleUpdates;
         SparseMatrixX _baseMeshDiffHess, _projPosMat, _unprojPosMat;
         VectorX _baseMeshDiffCoeff;
     };
 }
-

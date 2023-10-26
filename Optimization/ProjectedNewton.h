@@ -2,7 +2,7 @@
 
 #include "LineSearch.h"
 
-void projectedNewtonSolver(
+void ProjectedNewtonSolver(
     std::function<double(const Eigen::VectorXd&, Eigen::VectorXd*, Eigen::SparseMatrix<double>*, bool)> objFunc,
     std::function<double(const Eigen::VectorXd&, const Eigen::VectorXd&)> findMaxStep, const Eigen::VectorXd& lx,
     const Eigen::VectorXd& ux, Eigen::VectorXd& x0, int numIter = 1000, double gradTol = 1e-14, double xTol = 0,

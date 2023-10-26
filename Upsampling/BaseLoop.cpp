@@ -1,112 +1,103 @@
 #include "BaseLoop.h"
-#include "../CommonTools.h"
 #include <cassert>
-#include <iostream>
 #include <memory>
 
 namespace ComplexWrinkleField {
-bool BaseLoop::IsVertRegular(int vert) const {
-  if (_mesh->IsVertBoundary(vert)) return true;
-  return (_mesh->GetVertEdges(vert).size() == 6);
-}
+// The vertex id map from old (input) mesh to the new upsampled mesh
+int BaseLoop::GetVertVertIndex(int vert) const { return vert; }
 
-bool BaseLoop::AreIrregularVertsIsolated() const {
-  for (int edge = 0; edge < _mesh->GetEdgeCount(); ++edge) {
-    const std::vector<int>& eVerts = _mesh->GetEdgeVerts(edge);
-    if (IsVertRegular(eVerts[0])) continue;
-    if (IsVertRegular(eVerts[1])) continue;
-    return false;
-  }
-  return true;
-}
+// The new vertex id generated from the edge of the input
+int BaseLoop::GetEdgeVertIndex(int edge) const { return _mesh->GetVertCount() + edge; }
 
-int BaseLoop::_GetVertVertIndex(int vert) const { return vert; }
+// The edge id map from the old (input) mesh to the new upsampled mesh
+int BaseLoop::GetEdgeEdgeIndex(int edge, int vertInEdge) const { return 2 * edge + vertInEdge; }
 
-int BaseLoop::_GetEdgeVertIndex(int edge) const { return _mesh->GetVertCount() + edge; }
-
-int BaseLoop::_GetEdgeEdgeIndex(int edge, int vertInEdge) const { return 2 * edge + vertInEdge; }
-
-int BaseLoop::_GetFaceEdgeIndex(int face, int edgeInFace) const {
+// The new edge id generated from the face of the input
+int BaseLoop::GetFaceEdgeIndex(int face, int edgeInFace) const {
 
   assert(_mesh->IsTriangulated());
   return 2 * _mesh->GetEdgeCount() + 3 * face + edgeInFace;
 }
 
-int BaseLoop::_GetCentralFaceIndex(int face) const {
+// After upsampling, each face has been divided into four faces, return the new face id of the central face
+int BaseLoop::GetCentralFaceIndex(int face) const {
 
   assert(_mesh->IsTriangulated());
   return 4 * face + 3;
 }
 
-int BaseLoop::_GetCornerFaceIndex(int face, int vertInFace) const {
+// After upsampling, each face has been divided into four faces, return the new face id of the vertex corner (given by vertInFace)
+int BaseLoop::GetCornerFaceIndex(int face, int vertInFace) const {
 
   assert(_mesh->IsTriangulated());
   return 4 * face + vertInFace;
 }
 
+// Get the edge information after subdivision
 void BaseLoop::GetSubdividedEdges(std::vector<std::vector<int>>& edgeToVert) const {
 
   assert(_mesh->IsTriangulated());
 
-  int E = _mesh->GetEdgeCount();
-  int F = _mesh->GetFaceCount();
-  edgeToVert.resize(2 * E + 3 * F);
+  int nEdges = _mesh->GetEdgeCount();
+  int nFaces = _mesh->GetFaceCount();
+  edgeToVert.resize(2 * nEdges + 3 * nFaces);
 
-  for (int edge = 0; edge < E; ++edge) {
+  for (int edge = 0; edge < nEdges; ++edge) {
     const std::vector<int>& eVerts = _mesh->GetEdgeVerts(edge);
     for (int i = 0; i < 2; ++i) {
-      int v0 = _GetVertVertIndex(eVerts[i]);
-      int v1 = _GetEdgeVertIndex(edge);
+      int v0 = GetVertVertIndex(eVerts[i]);
+      int v1 = GetEdgeVertIndex(edge);
       if (v0 > v1) std::swap(v0, v1);
 
-      int index = _GetEdgeEdgeIndex(edge, i);
+      int index = GetEdgeEdgeIndex(edge, i);
       edgeToVert[index].push_back(v0);
       edgeToVert[index].push_back(v1);
     }
   }
 
-  for (int face = 0; face < F; ++face) {
+  for (int face = 0; face < nFaces; ++face) {
     const std::vector<int>& fEdges = _mesh->GetFaceEdges(face);
     for (int i = 0; i < 3; ++i) {
-      int v0 = _GetEdgeVertIndex(fEdges[i]);
-      int v1 = _GetEdgeVertIndex(fEdges[(i + 1) % 3]);
+      int v0 = GetEdgeVertIndex(fEdges[i]);
+      int v1 = GetEdgeVertIndex(fEdges[(i + 1) % 3]);
       if (v0 > v1) std::swap(v0, v1);
 
-      int index = _GetFaceEdgeIndex(face, i);
+      int index = GetFaceEdgeIndex(face, i);
       edgeToVert[index].push_back(v0);
       edgeToVert[index].push_back(v1);
     }
   }
 }
 
+// Get the face information after subdivision
 void BaseLoop::GetSubdividedFaces(std::vector<std::vector<int>>& faceToVert) const {
 
   assert(_mesh->IsTriangulated());
 
-  int V = _mesh->GetVertCount();
-  int F = _mesh->GetFaceCount();
-  faceToVert.resize(4 * F);
+  int nFaces = _mesh->GetFaceCount();
+  faceToVert.resize(4 * nFaces);
 
   std::vector<int> faceFlagsNew;
-  faceFlagsNew.resize(4 * F, 0);
+  faceFlagsNew.resize(4 * nFaces, 0);
 
   for (int face = 0; face < _mesh->GetFaceCount(); ++face) {
-    int central = _GetCentralFaceIndex(face);
+    int central = GetCentralFaceIndex(face);
     const std::vector<int>& fVerts = _mesh->GetFaceVerts(face);
     const std::vector<int>& fEdges = _mesh->GetFaceEdges(face);
     for (int j = 0; j < 3; ++j) {
       // Corner face
-      int index = _GetCornerFaceIndex(face, j);
-      faceToVert[index].push_back(_GetVertVertIndex(fVerts[j]));
-      faceToVert[index].push_back(_GetEdgeVertIndex(fEdges[j]));
-      faceToVert[index].push_back(_GetEdgeVertIndex(fEdges[(j + 2) % 3]));
+      int index = GetCornerFaceIndex(face, j);
+      faceToVert[index].push_back(GetVertVertIndex(fVerts[j]));
+      faceToVert[index].push_back(GetEdgeVertIndex(fEdges[j]));
+      faceToVert[index].push_back(GetEdgeVertIndex(fEdges[(j + 2) % 3]));
       // Central face
-      faceToVert[central].push_back(_GetEdgeVertIndex(fEdges[j]));
+      faceToVert[central].push_back(GetEdgeVertIndex(fEdges[j]));
     }
   }
 }
 
-Scalar BaseLoop::_GetAlpha(int vert) const {
+// Loop coefficient alpha, refer [de Goes et al. 2016]
+Scalar BaseLoop::GetAlpha(int vert) const {
 
   assert(!_mesh->IsVertBoundary(vert));
   const std::vector<int>& vEdges = _mesh->GetVertEdges(vert);
@@ -120,7 +111,8 @@ Scalar BaseLoop::_GetAlpha(int vert) const {
   return alpha;
 }
 
-Scalar BaseLoop::_GetBeta(int vert) const {
+// Loop coefficient beta, refer [de Goes et al. 2016]
+Scalar BaseLoop::GetBeta(int vert) const {
 
   assert(!_mesh->IsVertBoundary(vert));
   const std::vector<int>& vFaces = _mesh->GetVertFaces(vert);
@@ -139,6 +131,7 @@ Scalar BaseLoop::_GetBeta(int vert) const {
   return beta;
 }
 
+// The Loop Scheme for 0-forms
 void BaseLoop::BuildS0(SparseMatrixX& A) const {
   assert(_mesh && _mesh->IsTriangulated());
 
@@ -147,65 +140,67 @@ void BaseLoop::BuildS0(SparseMatrixX& A) const {
 
   std::vector<TripletX> triplets;
   const int nverts = _mesh->GetVertCount();
-  const int nedges = _mesh->GetEdgeCount();
+  const int nEdges = _mesh->GetEdgeCount();
 
   // Even (old) verts
   for (int vi = 0; vi < nverts; ++vi) {
     if (_mesh->IsVertBoundary(vi))
-      _AssembleVertEvenBoundary(vi, std::back_inserter(triplets));
+      AssembleVertEvenBoundary(vi, std::back_inserter(triplets));
     else
-      _AssembleVertEvenInterior(vi, std::back_inserter(triplets));
+      AssembleVertEvenInterior(vi, std::back_inserter(triplets));
   }
 
   // Odd (new) verts
-  for (int edge = 0; edge < nedges; ++edge) {
+  for (int edge = 0; edge < nEdges; ++edge) {
     if (_mesh->IsEdgeBoundary(edge))
-      _AssembleVertOddBoundary(edge, std::back_inserter(triplets));
+      AssembleVertOddBoundary(edge, std::back_inserter(triplets));
     else
-      _AssembleVertOddInterior(edge, std::back_inserter(triplets));
+      AssembleVertOddInterior(edge, std::back_inserter(triplets));
   }
 
   A.resize(nrows, ncols);
   A.setFromTriplets(triplets.begin(), triplets.end());
 }
 
+// The Loop Scheme for 1-forms
 void BaseLoop::BuildS1(SparseMatrixX& A) const {
 
   assert(_mesh->IsTriangulated());
 
   std::vector<TripletX> triplets;
-  const int nedges = _mesh->GetEdgeCount();
-  const int nfaces = _mesh->GetFaceCount();
+  int nEdges = _mesh->GetEdgeCount();
+  int nFaces = _mesh->GetFaceCount();
 
-  for (int edge = 0; edge < nedges; ++edge) {
+  for (int edge = 0; edge < nEdges; ++edge) {
     if (_mesh->IsEdgeBoundary(edge)) {
-      _AssembleEdgeEvenBoundary(edge, 0, std::back_inserter(triplets));
-      _AssembleEdgeEvenBoundary(edge, 1, std::back_inserter(triplets));
+      AssembleEdgeEvenBoundary(edge, 0, std::back_inserter(triplets));
+      AssembleEdgeEvenBoundary(edge, 1, std::back_inserter(triplets));
     } else {
       const std::vector<int>& eVerts = _mesh->GetEdgeVerts(edge);
       for (int i = 0; i < eVerts.size(); ++i) {
         if (_mesh->IsVertBoundary(eVerts[i]))
-          _AssembleEdgeEvenPartialBoundary(edge, i, std::back_inserter(triplets));
+          AssembleEdgeEvenPartialBoundary(edge, i, std::back_inserter(triplets));
         else
-          _AssembleEdgeEvenInterior(edge, i, std::back_inserter(triplets));
+          AssembleEdgeEvenInterior(edge, i, std::back_inserter(triplets));
       }
     }
   }
 
-  for (int face = 0; face < nfaces; ++face) {
-    _AssembleEdgeOdd(face, 0, std::back_inserter(triplets));
-    _AssembleEdgeOdd(face, 1, std::back_inserter(triplets));
-    _AssembleEdgeOdd(face, 2, std::back_inserter(triplets));
+  for (int face = 0; face < nFaces; ++face) {
+    AssembleEdgeOdd(face, 0, std::back_inserter(triplets));
+    AssembleEdgeOdd(face, 1, std::back_inserter(triplets));
+    AssembleEdgeOdd(face, 2, std::back_inserter(triplets));
   }
 
-  A.resize(2 * nedges + 3 * nfaces, nedges);
+  A.resize(2 * nEdges + 3 * nFaces, nEdges);
   A.setFromTriplets(triplets.begin(), triplets.end());
 }
 
-void BaseLoop::_AssembleEdgeEvenBoundary(int edge, int vertInEdge, TripletInserter out) const {
-  int row = _GetEdgeEdgeIndex(edge, vertInEdge);
+// Loop rules for interior even edges
+void BaseLoop::AssembleEdgeEvenBoundary(int edge, int vertInEdge, TripletInserter out) const {
+  int row = GetEdgeEdgeIndex(edge, vertInEdge);
   int vert = _mesh->GetEdgeVerts(edge)[vertInEdge];
-  int rSign = (_GetVertVertIndex(vert) < _GetEdgeVertIndex(edge)) ? 1 : -1;
+  int rSign = (GetVertVertIndex(vert) < GetEdgeVertIndex(edge)) ? 1 : -1;
 
   int nEdge = _mesh->GetVertEdges(vert).front();
   int vertInNedge = _mesh->GetVertIndexInEdge(nEdge, vert);
@@ -219,34 +214,36 @@ void BaseLoop::_AssembleEdgeEvenBoundary(int edge, int vertInEdge, TripletInsert
 
   if (edge == nEdge) {
     if (_isFixBnd) {
-      // Fig1 even boudary rules in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary rules in S.I. of [Chen et al. 2023]
       *out++ = TripletX(row, nEdge, (nSign == rSign) ? -0.5 : 0.5);
     } else {
-      // Fig2 even boudary rules in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary rules in S.I. of [de Goes et al. 2016]
       *out++ = TripletX(row, nEdge, (nSign == rSign) ? -0.375 : 0.375);
       *out++ = TripletX(row, pEdge, (pSign == rSign) ? 0.125 : -0.125);
     }
 
   } else {
     if (_isFixBnd) {
-      // Fig1 even boudary rules in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary rules in S.I. of [Chen et al. 2023]
       *out++ = TripletX(row, pEdge, (pSign == rSign) ? -0.5 : 0.5);
     } else {
-      // Fig2 even boudary rules in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary rules in S.I. of [de Goes et al. 2016]
       *out++ = TripletX(row, pEdge, (pSign == rSign) ? -0.375 : 0.375);
       *out++ = TripletX(row, nEdge, (nSign == rSign) ? 0.125 : -0.125);
     }
   }
 }
 
-void BaseLoop::_InsertEdgeEdgeValue(int row, int col, int vert, int rSign, Scalar val, TripletInserter out) const {
+// Insert Triplet from edge-edge case for one-form subdivision
+void BaseLoop::InsertEdgeEdgeValue(int row, int col, int vert, int rSign, Scalar val, TripletInserter out) const {
   // Handy function that sets the sign of val for an edge col incident to vert.
   int vertInCol = _mesh->GetVertIndexInEdge(col, vert);
   int sign = _mesh->GetVertSignInEdge(col, vertInCol);
   *out++ = TripletX(row, col, (sign == rSign) ? -val : val);
 }
 
-void BaseLoop::_InsertEdgeFaceValue(int row, int face, int vert, int rSign, Scalar val, TripletInserter out) const {
+// Insert Triplet from face-edge case for one-form subdivision
+void BaseLoop::InsertEdgeFaceValue(int row, int face, int vert, int rSign, Scalar val, TripletInserter out) const {
   // Handy function that sets the sign of val for an edge col incident to face.
   int vertInFace = _mesh->GetVertIndexInFace(face, vert);
   int colInFace = (vertInFace + 1) % 3;
@@ -255,10 +252,11 @@ void BaseLoop::_InsertEdgeFaceValue(int row, int face, int vert, int rSign, Scal
   *out++ = TripletX(row, col, (sign == rSign) ? val : -val);
 }
 
-void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, TripletInserter out) const {
-  int row = _GetEdgeEdgeIndex(edge, vertInEdge);
+// Loop rules for boundary even edges (its endpoints are all on the boundary)
+void BaseLoop::AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, TripletInserter out) const {
+  int row = GetEdgeEdgeIndex(edge, vertInEdge);
   int vert = _mesh->GetEdgeVerts(edge)[vertInEdge];
-  int rSign = (_GetVertVertIndex(vert) < _GetEdgeVertIndex(edge)) ? 1 : -1;
+  int rSign = (GetVertVertIndex(vert) < GetEdgeVertIndex(edge)) ? 1 : -1;
 
   const std::vector<int>& vEdges = _mesh->GetVertEdges(vert);
   const int edgeCount = vEdges.size();
@@ -277,12 +275,12 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
 
   if (faceCount == 2) {
     if (_isFixBnd) {
-      // Fig1 even boudary adjacent rules top-left in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary adjacent rules top-left in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[0], 0.53125 / 3));
       eValues.push_back(std::make_pair(vEdges[1], 0.8125 / 3));
       eValues.push_back(std::make_pair(vEdges[2], 0.53125 / 3));
     } else {
-      // Fig2 even boudary adjacent rules top-left in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary adjacent rules top-left in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[0], 0.15625 / 3));
       eValues.push_back(std::make_pair(vEdges[1], 0.8125 / 3));
       eValues.push_back(std::make_pair(vEdges[2], 0.15625 / 3));
@@ -293,13 +291,13 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
     fValues.push_back(std::make_pair(vFaces[1], -0.15625 / 3));
   } else if (faceCount == 3 && edgeInVert == 1) {
     if (_isFixBnd) {
-      // Fig1 even boudary adjacent rules top-mid in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary adjacent rules top-mid in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[0], 0.53125 / 3));
       eValues.push_back(std::make_pair(vEdges[1], 0.3125));
       eValues.push_back(std::make_pair(vEdges[2], 0.09375));
       eValues.push_back(std::make_pair(vEdges[3], 0.125 / 3));
     } else {
-      // Fig2 even boudary adjacent rules top-mid in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary adjacent rules top-mid in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[0], 0.15625 / 3));
       eValues.push_back(std::make_pair(vEdges[1], 0.3125));
       eValues.push_back(std::make_pair(vEdges[2], 0.09375));
@@ -311,13 +309,13 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
     fValues.push_back(std::make_pair(vFaces[2], -0.125 / 3));
   } else if (faceCount == 3 && edgeInVert == 2) {
     if (_isFixBnd) {
-      // Symmetric case of Fig1 even boudary adjacent rules top-mid in S.I. of [Chen et al. 2023]
+      // Symmetric case of Fig1 even boundary adjacent rules top-mid in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[3], 0.53125 / 3));
       eValues.push_back(std::make_pair(vEdges[2], 0.3125));
       eValues.push_back(std::make_pair(vEdges[1], 0.09375));
       eValues.push_back(std::make_pair(vEdges[0], 0.125 / 3));
     } else {
-      // Symmetric case of Fig2 even boudary adjacent rules top-mid in S.I. of [de Goes et al. 2016]
+      // Symmetric case of Fig2 even boundary adjacent rules top-mid in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[3], 0.15625 / 3));
       eValues.push_back(std::make_pair(vEdges[2], 0.3125));
       eValues.push_back(std::make_pair(vEdges[1], 0.09375));
@@ -329,17 +327,17 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
     fValues.push_back(std::make_pair(vFaces[0], 0.125 / 3));
   } else if (faceCount == 4 && edgeInVert == 2) {
     if (_isFixBnd) {
-      // Fig1 even boudary adjacent rules bot-left in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary adjacent rules bot-left in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[0], 0.03125));
       eValues.push_back(std::make_pair(vEdges[1], 0.125));
       eValues.push_back(std::make_pair(vEdges[2], 0.3125));
       eValues.push_back(std::make_pair(vEdges[3], 0.125));
       eValues.push_back(std::make_pair(vEdges[4], 0.03125));
     } else {
-      // Fig2 even boudary adjacent rules bot-left in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary adjacent rules bot-left in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[0], -0.09375));
       eValues.push_back(std::make_pair(vEdges[1], 0.125));
-      eValues.push_back(std::make_pair(vEdges[2], 0.3125)); 
+      eValues.push_back(std::make_pair(vEdges[2], 0.3125));
       eValues.push_back(std::make_pair(vEdges[3], 0.125));
       eValues.push_back(std::make_pair(vEdges[4], -0.09375));
     }
@@ -350,7 +348,7 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
     fValues.push_back(std::make_pair(vFaces[3], -0.03125));
   } else if (edgeInVert == 1) {
     if (_isFixBnd) {
-      // Fig1 even boudary adjacent rules top-right in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary adjacent rules top-right in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[0], 0.53125 / 3));
       eValues.push_back(std::make_pair(vEdges[1], 0.3125));
       eValues.push_back(std::make_pair(vEdges[2], 0.09375));
@@ -360,24 +358,24 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
       fValues.push_back(std::make_pair(vFaces[1], -0.03125 / 3));
       fValues.push_back(std::make_pair(vFaces[2], -0.125 / 3));
     } else {
-      // Fig2 even boudary adjacent rules top-right in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary adjacent rules top-right in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[0], 0.15625 / 3));
-      eValues.push_back(std::make_pair(vEdges[1], 0.3125)); 
+      eValues.push_back(std::make_pair(vEdges[1], 0.3125));
       eValues.push_back(std::make_pair(vEdges[2], 0.09375));
       eValues.push_back(std::make_pair(vEdges[3], 0.125 / 3));
       eValues.push_back(std::make_pair(vEdges.back(), -0.125));
     }
   } else if (edgeInVert == edgeCount - 2) {
     if (_isFixBnd) {
-      // Symmetric case of Fig1 even boudary adjacent rules top-right in S.I. of [Chen et al. 2023]
+      // Symmetric case of Fig1 even boundary adjacent rules top-right in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[edgeCount - 1], 0.53125 / 3));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 2], 0.3125));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 3], 0.09375));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 4], 0.125 / 3));
     } else {
-      // Symmetric case of Fig2 even boudary adjacent rules top-right in S.I. of [de Goes et al. 2016]
+      // Symmetric case of Fig2 even boundary adjacent rules top-right in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[edgeCount - 1], 0.15625 / 3));
-      eValues.push_back(std::make_pair(vEdges[edgeCount - 2], 0.3125)); 
+      eValues.push_back(std::make_pair(vEdges[edgeCount - 2], 0.3125));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 3], 0.09375));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 4], 0.125 / 3));
       eValues.push_back(std::make_pair(vEdges.front(), -0.125));
@@ -388,14 +386,14 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
     fValues.push_back(std::make_pair(vFaces[faceCount - 3], 0.125 / 3));
   } else if (edgeInVert == 2) {
     if (_isFixBnd) {
-      // Fig1 even boudary adjacent rules bot-mid in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary adjacent rules bot-mid in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[0], 0.03125));
       eValues.push_back(std::make_pair(vEdges[1], 0.125));
       eValues.push_back(std::make_pair(vEdges[2], 0.3125));
       eValues.push_back(std::make_pair(vEdges[3], 0.125));
       eValues.push_back(std::make_pair(vEdges[4], 0.03125));
     } else {
-      // Fig2 even boudary adjacent rules bot-mid in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary adjacent rules bot-mid in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[0], -0.09375));
       eValues.push_back(std::make_pair(vEdges[1], 0.125));
       eValues.push_back(std::make_pair(vEdges[2], 0.3125));
@@ -411,14 +409,14 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
     fValues.push_back(std::make_pair(vFaces[3], -0.03125));
   } else if (edgeInVert == edgeCount - 3) {
     if (_isFixBnd) {
-      // Symmetric case of Fig1 even boudary adjacent rules bot-mid in S.I. of [Chen et al. 2023]
+      // Symmetric case of Fig1 even boundary adjacent rules bot-mid in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[edgeCount - 1], 0.03125));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 2], 0.125));
-      eValues.push_back(std::make_pair(vEdges[edgeCount - 3], 0.3125)); 
+      eValues.push_back(std::make_pair(vEdges[edgeCount - 3], 0.3125));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 4], 0.125));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 5], 0.03125));
     } else {
-      // Symmetric case of Fig2 even boudary adjacent rules bot-mid in S.I. of [de Goes et al. 2016]
+      // Symmetric case of Fig2 even boundary adjacent rules bot-mid in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[edgeCount - 1], -0.09375));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 2], 0.125));
       eValues.push_back(std::make_pair(vEdges[edgeCount - 3], 0.3125));
@@ -434,17 +432,17 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
     fValues.push_back(std::make_pair(vFaces[faceCount - 4], 0.03125));
   } else {
     if (_isFixBnd) {
-      // Fig1 even boudary adjacent rules bot-right in S.I. of [Chen et al. 2023]
+      // Fig1 even boundary adjacent rules bot-right in S.I. of [Chen et al. 2023]
       eValues.push_back(std::make_pair(vEdges[edgeInVert - 2], 0.03125));
       eValues.push_back(std::make_pair(vEdges[edgeInVert - 1], 0.125));
-      eValues.push_back(std::make_pair(vEdges[edgeInVert], 0.3125)); 
+      eValues.push_back(std::make_pair(vEdges[edgeInVert], 0.3125));
       eValues.push_back(std::make_pair(vEdges[edgeInVert + 1], 0.125));
       eValues.push_back(std::make_pair(vEdges[edgeInVert + 2], 0.03125));
     } else {
-      // Fig2 even boudary adjacent rules bot-right in S.I. of [de Goes et al. 2016]
+      // Fig2 even boundary adjacent rules bot-right in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[edgeInVert - 2], 0.03125));
       eValues.push_back(std::make_pair(vEdges[edgeInVert - 1], 0.125));
-      eValues.push_back(std::make_pair(vEdges[edgeInVert], 0.3125)); 
+      eValues.push_back(std::make_pair(vEdges[edgeInVert], 0.3125));
       eValues.push_back(std::make_pair(vEdges[edgeInVert + 1], 0.125));
       eValues.push_back(std::make_pair(vEdges[edgeInVert + 2], 0.03125));
       eValues.push_back(std::make_pair(vEdges.front(), -0.125));
@@ -459,20 +457,21 @@ void BaseLoop::_AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triple
   }
 
   for (size_t i = 0; i < eValues.size(); ++i) {
-    _InsertEdgeEdgeValue(row, eValues[i].first, vert, rSign, eValues[i].second, out);
+    InsertEdgeEdgeValue(row, eValues[i].first, vert, rSign, eValues[i].second, out);
   }
 
   for (size_t i = 0; i < fValues.size(); ++i) {
-    _InsertEdgeFaceValue(row, fValues[i].first, vert, rSign, fValues[i].second, out);
+    InsertEdgeFaceValue(row, fValues[i].first, vert, rSign, fValues[i].second, out);
   }
 }
 
-void BaseLoop::_AssembleEdgeEvenInterior(int edge, int vertInEdge, TripletInserter out) const {
+// Loop rules for interior even edges
+void BaseLoop::AssembleEdgeEvenInterior(int edge, int vertInEdge, TripletInserter out) const {
   int vert = _mesh->GetEdgeVerts(edge)[vertInEdge];
   int edgeInVert = _mesh->GetEdgeIndexInVert(vert, edge);
 
-  int row = _GetEdgeEdgeIndex(edge, vertInEdge);
-  int rSign = (_GetVertVertIndex(vert) < _GetEdgeVertIndex(edge)) ? 1 : -1;
+  int row = GetEdgeEdgeIndex(edge, vertInEdge);
+  int rSign = (GetVertVertIndex(vert) < GetEdgeVertIndex(edge)) ? 1 : -1;
 
   const std::vector<int>& vEdges = _mesh->GetVertEdges(vert);
   const std::vector<int>& vFaces = _mesh->GetVertFaces(vert);
@@ -483,8 +482,8 @@ void BaseLoop::_AssembleEdgeEvenInterior(int edge, int vertInEdge, TripletInsert
   const int count = vEdges.size();
   assert(count == vFaces.size());
 
-  Scalar alpha = _GetAlpha(vert);
-  Scalar beta = _GetBeta(vert);
+  Scalar alpha = GetAlpha(vert);
+  Scalar beta = GetBeta(vert);
 
   if (count == 3) {
     // Fig2 even interior rules bot in S.I. of [de Goes et al. 2016]
@@ -526,16 +525,17 @@ void BaseLoop::_AssembleEdgeEvenInterior(int edge, int vertInEdge, TripletInsert
   }
 
   for (size_t i = 0; i < eValues.size(); ++i) {
-    _InsertEdgeEdgeValue(row, eValues[i].first, vert, rSign, eValues[i].second, out);
+    InsertEdgeEdgeValue(row, eValues[i].first, vert, rSign, eValues[i].second, out);
   }
 
   for (size_t i = 0; i < fValues.size(); ++i) {
-    _InsertEdgeFaceValue(row, fValues[i].first, vert, rSign, fValues[i].second, out);
+    InsertEdgeFaceValue(row, fValues[i].first, vert, rSign, fValues[i].second, out);
   }
 }
 
-void BaseLoop::_AssembleEdgeOdd(int face, int edgeInFace, TripletInserter out) const {
-  int row = _GetFaceEdgeIndex(face, edgeInFace);
+// Loop rules for odd edges
+void BaseLoop::AssembleEdgeOdd(int face, int edgeInFace, TripletInserter out) const {
+  int row = GetFaceEdgeIndex(face, edgeInFace);
 
   int vertInFace = (edgeInFace + 1) % 3;
   int vert = _mesh->GetFaceVerts(face)[vertInFace];
@@ -549,7 +549,7 @@ void BaseLoop::_AssembleEdgeOdd(int face, int edgeInFace, TripletInserter out) c
   int pEdge = _mesh->GetFaceEdges(face)[(vertInFace + 2) % 3];
   int pSign = _mesh->GetEdgeSignInFace(face, (vertInFace + 2) % 3);
 
-  int rSign = (_GetEdgeVertIndex(nEdge) < _GetEdgeVertIndex(pEdge)) ? 1 : -1;
+  int rSign = (GetEdgeVertIndex(nEdge) < GetEdgeVertIndex(pEdge)) ? 1 : -1;
 
   bool nBdry = _mesh->IsEdgeBoundary(nEdge);
   bool pBdry = _mesh->IsEdgeBoundary(pEdge);

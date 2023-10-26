@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../CWFTypes.h"
+#include "../CWF.h"
 
 namespace ComplexWrinkleField {
     // Standard Loop subdivision

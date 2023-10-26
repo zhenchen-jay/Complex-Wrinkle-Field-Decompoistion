@@ -11,8 +11,8 @@ file(GLOB SRCFILES
     ../../Upsampling/*.h
     ../../Decomposition/*.h
     ../../MeshLib/*.h
-    ../../SecondFundamentalForm/*.h
     ../../TFWShell/*.h
+    ../../TFWShell/SecondFundamentalForm/*.h
     ../../Optimization/*.h
     ../../*.h
     ../../*.hpp
@@ -20,8 +20,8 @@ file(GLOB SRCFILES
     ../../Decomposition/*.cpp
     ../../Upsampling/*.cpp
     ../../MeshLib/*.cpp
-    ../../SecondFundamentalForm/*.cpp
     ../../TFWShell/*.cpp
+    ../../TFWShell/SecondFundamentalForm/*.cpp
     ../../Optimization/*.cpp
     ../../*.cpp
     *.cpp)

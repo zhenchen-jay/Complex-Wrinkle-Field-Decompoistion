@@ -244,12 +244,12 @@ void Mesh::Populate(const std::vector<Vector3>& points, const std::vector<std::v
     }
   }
 
-  _CheckValidity();
+  CheckValidity();
 
-  _SortOneRings();
+  SortOneRings();
 
-  _isTriangulated = _AreFacesTris();
-  _isQuadrangulated = _AreFacesQuads();
+  _isTriangulated = AreFacesTris();
+  _isQuadrangulated = AreFacesQuads();
 }
 
 void Mesh::Populate(const MatrixX& points, const Eigen::MatrixXi& faceToVert) {
@@ -265,7 +265,7 @@ void Mesh::Populate(const MatrixX& points, const Eigen::MatrixXi& faceToVert) {
   Populate(ptVec, faceVec);
 }
 
-void Mesh::_CheckValidity() const {
+void Mesh::CheckValidity() const {
   for (int vert = 0; vert < _vertToFace.size(); ++vert) {
     assert(_vertToFace[vert].size());
     assert(_vertToEdge[vert].size());
@@ -327,7 +327,7 @@ void Mesh::Triangulate() {
   Populate(points, faceVerts, edgeVerts);
 }
 
-void Mesh::_SortOneRings() {
+void Mesh::SortOneRings() {
   for (size_t vert = 0; vert < GetVertCount(); ++vert) {
     int firstFace = GetVertFaces(vert)[0];
     if (IsVertBoundary(vert)) {
@@ -376,14 +376,14 @@ void Mesh::_SortOneRings() {
   }
 }
 
-bool Mesh::_AreFacesTris() const {
+bool Mesh::AreFacesTris() const {
   for (int face = 0; face < _faceToVert.size(); ++face) {
     if (_faceToVert[face].size() != 3) return false;
   }
   return true;
 }
 
-bool Mesh::_AreFacesQuads() const {
+bool Mesh::AreFacesQuads() const {
   for (int face = 0; face < _faceToVert.size(); ++face) {
     if (_faceToVert[face].size() != 4) return false;
   }

@@ -6,15 +6,17 @@
 #include <memory>
 #include <vector>
 
-#include "../MeshLib/MeshConnectivity.h"
-#include "../SecondFundamentalForm/MidedgeAngleSinFormulation.h"
-#include "../SecondFundamentalForm/MidedgeAngleTanFormulation.h"
-#include "../SecondFundamentalForm/MidedgeAverageFormulation.h"
-#include "../SecondFundamentalForm/SecondFundamentalFormDiscretization.h"
+#include "SecondFundamentalForm/MidedgeAngleSinFormulation.h"
+#include "SecondFundamentalForm/MidedgeAngleTanFormulation.h"
+#include "SecondFundamentalForm/MidedgeAverageFormulation.h"
+#include "SecondFundamentalForm/SecondFundamentalFormDiscretization.h"
 
 #include "../CommonTools.h"
-#include "../MeshLib/GeometryDerivatives.h"
-#include "../MeshLib/MeshGeometry.h"
+#include "GeometryDerivatives.h"
+#include "MeshConnectivity.h"
+#include "MeshGeometry.h"
+#include "Quadrature.h"
+
 
 namespace WrinkledTensionField {
 class TFWShell {
@@ -37,7 +39,7 @@ public:
     _poissonRatio = poissonRatio;
     _thickness = thickness;
     _youngsModulus = youngsModulus;
-    _quadPts = buildQuadraturePoints(quadOrd);
+    _quadPts = BuildQuadraturePoints(quadOrd);
   }
 
   void initialization();                                   // initialize all fundamental forms

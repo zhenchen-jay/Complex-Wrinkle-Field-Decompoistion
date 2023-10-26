@@ -6,7 +6,7 @@
 #include "PaintGeometry.h"
 
 
-Eigen::MatrixXd PaintGeometry::paintPhi(const Eigen::VectorXd& phi,
+Eigen::MatrixXd PaintGeometry::PaintPhi(const Eigen::VectorXd& phi,
                                         Eigen::VectorXd* brightness) // brightness should between 0 and 1
 {
   int nverts = phi.size();

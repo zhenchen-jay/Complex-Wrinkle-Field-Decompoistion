@@ -1,36 +1,21 @@
 #include "polyscope/pick.h"
-#include "polyscope/polyscope.h"
-
-#include "polyscope/messages.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
-#include "polyscope/view.h"
-#include <igl/boundary_loop.h>
-#include <igl/cotmatrix_entries.h>
-#include <igl/cylinder.h>
-#include <igl/doublearea.h>
 #include <igl/file_dialog_open.h>
 #include <igl/file_dialog_save.h>
-#include <igl/invert_diag.h>
-#include <igl/loop.h>
 #include <igl/per_vertex_normals.h>
 #include <igl/readOBJ.h>
 #include <igl/writeOBJ.h>
 
-#include <filesystem>
 #include <iostream>
-#include <utility>
 
-#include "../../CWFTypes.h"
+#include "../../CWF.h"
 #include "../../CommonTools.h"
 #include "../../LoadSaveIO.h"
-#include "../../MeshLib/Mesh.h"
 #include "../../PaintGeometry.h"
 #include "../../json.hpp"
 
 #include "../../KnoppelStripePatterns.h"
-#include "../../Upsampling/BaseLoop.h"
-#include "../../Upsampling/ComplexLoop.h"
 #include "../../Upsampling/Subdivision.h"
 
 
@@ -85,8 +70,8 @@ int updateViewHelper(const MatrixX& basePos, const Eigen::MatrixXi& baseFaces, c
         ->translate({curShift * shiftx, shifty, 0});
   }
 
-  mPaint.setNormalization(false);
-  MatrixX phaseColor = mPaint.paintPhi(upsampledPhase);
+  mPaint.SetNormalization(false);
+  MatrixX phaseColor = mPaint.PaintPhi(upsampledPhase);
   auto phasePatterns = polyscope::getSurfaceMesh("upsampled phase mesh" + std::to_string(meshId))
                            ->addVertexColorQuantity("vertex phi", phaseColor);
   phasePatterns->setEnabled(true);
@@ -152,13 +137,13 @@ void subdivideMesh() {
   upMesh.GetPos(upV);
   upMesh.GetFace(upF);
 
-  rescaleZvals(upCWF._zvals, upCWF._amp, upZvals);
-  getWrinkledMesh(upV, upF, upZvals, wrinkledV, wrinkleAmpRatio, false);
+  RescaleZvals(upCWF._zvals, upCWF._amp, upZvals);
+  GetWrinkledMesh(upV, upF, upZvals, wrinkledV, wrinkleAmpRatio, false);
   wrinkledF = upF;
   upOmega = upCWF._omega;
 
-  faceOmega = intrinsicEdgeVec2FaceVec(omega, baseMesh);
-  upFaceOmega = intrinsicEdgeVec2FaceVec(upOmega, upMesh);
+  faceOmega = IntrinsicEdgeVec2FaceVec(omega, baseMesh);
+  upFaceOmega = IntrinsicEdgeVec2FaceVec(upOmega, upMesh);
 
   upAmp.setZero(upZvals.size() / 2);
   upPhase.setZero(upZvals.size() / 2);
@@ -175,13 +160,13 @@ void subdivideMesh() {
     amp1 = secAmpRatio * amp;
 
     VectorX edgeArea, vertArea;
-    edgeArea = getEdgeArea(baseMesh);
-    vertArea = getVertArea(baseMesh);
-    roundZvalsFromEdgeOmegaVertexMag(baseMesh, omega1, amp1, edgeArea, vertArea, amp1.rows(), zvals1);
-    baseCWF1 = ComplexWrinkleField::CWF(amp1, omega1, normalizeZvals(zvals1), baseMesh);
+    edgeArea = GetEdgeArea(baseMesh);
+    vertArea = GetVertArea(baseMesh);
+    RoundZvalsFromEdgeOmegaVertexMag(baseMesh, omega1, amp1, edgeArea, vertArea, amp1.rows(), zvals1);
+    baseCWF1 = ComplexWrinkleField::CWF(amp1, omega1, NormalizeZvals(zvals1), baseMesh);
 
     ComplexWrinkleField::Subdivide(baseCWF1, upCWF1, upsampleTimes, isFixedBnd);
-    rescaleZvals(upCWF1._zvals, upCWF1._amp, upZvals1);
+    RescaleZvals(upCWF1._zvals, upCWF1._amp, upZvals1);
     std::cout << "second subdivision done" << std::endl;
 
     MatrixX upN;
@@ -195,8 +180,8 @@ void subdivideMesh() {
 
     upOmega1 = upCWF1._omega;
 
-    faceOmega1 = intrinsicEdgeVec2FaceVec(omega1, baseMesh);
-    upFaceOmega1 = intrinsicEdgeVec2FaceVec(upOmega1, upMesh);
+    faceOmega1 = IntrinsicEdgeVec2FaceVec(omega1, baseMesh);
+    upFaceOmega1 = IntrinsicEdgeVec2FaceVec(upOmega1, upMesh);
 
     upAmp1.setZero(upZvals1.size() / 2);
     upPhase1.setZero(upZvals1.size() / 2);
@@ -255,27 +240,27 @@ bool loadProblem(std::string loadFileName = "") {
   }
   std::cout << "wrinkle amplitude scaling ratio: " << wrinkleAmpRatio << std::endl;
 
-  if (!loadEdgeOmega(workingFolder + initOmegaPath, nedges, omega)) {
+  if (!LoadEdgeOmega(workingFolder + initOmegaPath, nedges, omega)) {
     std::cout << "missing init edge omega file." << std::endl;
     return false;
   }
 
   // convert old stored edge omega to the current order
-  omega = swapEdgeVec(triF, omega, 0);
+  omega = SwapEdgeVec(triF, omega, 0);
   std::cout << "convert finished, omega size: " << omega.rows() << std::endl;
 
-  if (!loadVertexZvals(workingFolder + initZValsPath, triV.rows(), zvals)) {
+  if (!LoadVertexZvals(workingFolder + initZValsPath, triV.rows(), zvals)) {
     std::cout << "missing init zval file, try to load amp file, and round zvals from amp and omega" << std::endl;
-    if (!loadVertexAmp(workingFolder + initAmpPath, triV.rows(), amp)) {
+    if (!LoadVertexAmp(workingFolder + initAmpPath, triV.rows(), amp)) {
       std::cout << "missing init amp file: " << std::endl;
       return false;
     }
 
     else {
       VectorX edgeArea, vertArea;
-      edgeArea = getEdgeArea(baseMesh);
-      vertArea = getVertArea(baseMesh);
-      roundZvalsFromEdgeOmegaVertexMag(baseMesh, omega, amp, edgeArea, vertArea, nverts, zvals);
+      edgeArea = GetEdgeArea(baseMesh);
+      vertArea = GetVertArea(baseMesh);
+      RoundZvalsFromEdgeOmegaVertexMag(baseMesh, omega, amp, edgeArea, vertArea, nverts, zvals);
     }
   } else {
     amp.setZero(triV.rows());
@@ -285,7 +270,7 @@ bool loadProblem(std::string loadFileName = "") {
     }
   }
   std::cout << "start to subdivide" << std::endl;
-  baseCWF = ComplexWrinkleField::CWF(amp, omega, normalizeZvals(zvals), baseMesh);
+  baseCWF = ComplexWrinkleField::CWF(amp, omega, NormalizeZvals(zvals), baseMesh);
 
   subdivideMesh();
   std::cout << "subdivide done, start to update view" << std::endl;
@@ -342,7 +327,7 @@ void callback() {
   if (ImGui::CollapsingHeader("Visualization Options", ImGuiTreeNodeFlags_DefaultOpen)) {
     if (ImGui::InputDouble("wrinkle amp scaling ratio", &wrinkleAmpRatio)) {
       if (wrinkleAmpRatio >= 0) {
-        getWrinkledMesh(upV, upF, upZvals, wrinkledV, wrinkleAmpRatio, false);
+        GetWrinkledMesh(upV, upF, upZvals, wrinkledV, wrinkleAmpRatio, false);
         updateView();
       }
     }

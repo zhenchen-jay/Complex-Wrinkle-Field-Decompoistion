@@ -97,7 +97,7 @@ void NewtonSolver(std::function<double(const Eigen::VectorXd&, Eigen::VectorXd*,
 		maxStepSize = findMaxStep(x0, delta_x);
 
 		localTimer.start();
-		double rate = armijoLineSearch(x0, grad, delta_x, objFunc, maxStepSize);
+		double rate = ArmijoLineSearch(x0, grad, delta_x, objFunc, maxStepSize);
 		localTimer.stop();
 		double localLinesearchTime = localTimer.elapsed<std::chrono::milliseconds>() * 1e-3;
 		totalLineSearchTime += localLinesearchTime;

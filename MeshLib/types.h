@@ -1,6 +1,4 @@
-
-#ifndef EIGEN_WRAPPER_H
-#define EIGEN_WRAPPER_H
+#pragma once
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
@@ -19,5 +17,3 @@ typedef Eigen::Triplet<Scalar> TripletX;
 typedef Eigen::SparseMatrix<Scalar> SparseMatrixX;
 typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixX;
 typedef std::back_insert_iterator< std::vector<TripletX> > TripletInserter;
-
-#endif // EIGEN_WRAPPER_H

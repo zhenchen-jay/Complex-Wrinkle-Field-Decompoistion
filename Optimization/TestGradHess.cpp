@@ -1,6 +1,6 @@
 #include "TestGradHess.h"
 
-void testFuncGradHessian(std::function<double(const Eigen::VectorXd&, Eigen::VectorXd*, Eigen::SparseMatrix<double>*, bool)> objFunc, const Eigen::VectorXd& x0)
+void TestFuncGradHessian(std::function<double(const Eigen::VectorXd&, Eigen::VectorXd*, Eigen::SparseMatrix<double>*, bool)> objFunc, const Eigen::VectorXd& x0)
 {
 	Eigen::VectorXd dir = x0;
 	dir(0) = 0;

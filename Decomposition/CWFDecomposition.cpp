@@ -7,14 +7,14 @@
 
 #include "../KnoppelStripePatterns.h"
 #include "../LoadSaveIO.h"
-#include "../MeshLib/IntrinsicGeometry.h"
+#include "../TFWShell//IntrinsicGeometry.h"
 #include "../Optimization/Newton.h"
 #include "../Optimization/ProjectedNewton.h"
 #include "../Optimization/TestGradHess.h"
 #include "../Upsampling/Subdivision.h"
 
 namespace ComplexWrinkleField {
-void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes) // should be removed!
+void CWFDecomposition::Initialization(const CWF& cwf, int upsampleTimes) // should be removed!
 {
   _baseCWF = cwf;
   _upsampleTimes = upsampleTimes;
@@ -24,14 +24,14 @@ void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes) // shou
   _upMesh.GetPos(_upV);
   _upMesh.GetFace(_upF);
   igl::per_vertex_normals(_upV, _upF, _upN);
-  _baseEdgeArea = getEdgeArea(_baseCWF._mesh);
-  _baseVertArea = getVertArea(_baseCWF._mesh);
-  _upVertArea = getVertArea(_upMesh);
+  _baseEdgeArea = GetEdgeArea(_baseCWF._mesh);
+  _baseVertArea = GetVertArea(_baseCWF._mesh);
+  _upVertArea = GetVertArea(_upMesh);
 
-  updateWrinkleCompUpMat();
+  UpdateWrinkleCompUpMat();
 }
 
-void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes, // CWF info
+void CWFDecomposition::Initialization(const CWF& cwf, int upsampleTimes, // CWF info
                                       const Mesh& restMesh,              // rest (coarse) mesh
                                       const Mesh& restWrinkleMesh,       // rest (wrinkle) mesh
                                       const Mesh& wrinkledMesh,          // target wrinkle mesh (for decomposition)
@@ -49,9 +49,9 @@ void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes, // CWF 
   _upMesh.GetPos(_upV);
   _upMesh.GetFace(_upF);
   igl::per_vertex_normals(_upV, _upF, _upN);
-  _baseEdgeArea = getEdgeArea(_baseCWF._mesh);
-  _baseVertArea = getVertArea(_baseCWF._mesh);
-  _upVertArea = getVertArea(_upMesh);
+  _baseEdgeArea = GetEdgeArea(_baseCWF._mesh);
+  _baseVertArea = GetVertArea(_baseCWF._mesh);
+  _upVertArea = GetVertArea(_upMesh);
 
   _restMesh = restMesh;
   _restWrinkledMesh = restWrinkleMesh;
@@ -71,16 +71,16 @@ void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes, // CWF 
   MeshConnectivity restMeshCon(restF), curMeshCon(curF);
 
   // clamped amp and omega
-  buildProjectionMat({}, curMeshCon, curPos.rows());
-  tfwShell =
+  BuildProjectionMat({}, curMeshCon, curPos.rows());
+  _tfwShell =
       WrinkledTensionField::TFWShell(restPos, restMeshCon, curPos, curMeshCon, poissonRatio, thickness, youngsModulus);
-  tfwShell.initialization();
+  _tfwShell.initialization();
 
-  updateWrinkleCompUpMat();
+  UpdateWrinkleCompUpMat();
 }
 
 
-void CWFDecomposition::initialization(int upsampleTimes,           // upsample info
+void CWFDecomposition::Initialization(int upsampleTimes,           // upsample info
                                       bool isFixedBnd,             // fixe bnd for loop
                                       const Mesh& restMesh,        // rest (coarse) mesh
                                       const Mesh& baseMesh,        // base (coarse) mesh
@@ -110,13 +110,13 @@ void CWFDecomposition::initialization(int upsampleTimes,           // upsample i
 
   MeshConnectivity restMeshCon(restF), curMeshCon(curF);
   // clamped amp and omega
-  buildProjectionMat(clampedVert, curMeshCon, curPos.rows());
-  tfwShell =
+  BuildProjectionMat(clampedVert, curMeshCon, curPos.rows());
+  _tfwShell =
       WrinkledTensionField::TFWShell(restPos, restMeshCon, curPos, curMeshCon, poissonRatio, thickness, youngsModulus);
-  tfwShell.initialization();
+  _tfwShell.initialization();
 
-  _baseEdgeArea = getEdgeArea(baseMesh);
-  _baseVertArea = getVertArea(baseMesh);
+  _baseEdgeArea = GetEdgeArea(baseMesh);
+  _baseVertArea = GetVertArea(baseMesh);
 
   // initialize amp and omega according to the compression
   double d1, d2;
@@ -137,14 +137,14 @@ void CWFDecomposition::initialization(int upsampleTimes,           // upsample i
   }
   Eigen::VectorXd amp, omega;
   Eigen::MatrixXd faceOmega;
-  initializeAmpOmega(curPos, curMeshCon, ampGuess, amp, faceOmega);
-  omega = faceVec2IntrinsicEdgeVec(faceOmega, baseMesh);
+  InitializeAmpOmega(curPos, curMeshCon, ampGuess, amp, faceOmega);
+  omega = FaceVec2IntrinsicEdgeVec(faceOmega, baseMesh);
   omega *= 17.0 / 13.0;
   amp /= 17.0 / 13.0;
 
   // initialize zvals
   VectorX zvals;
-  roundZvalsFromEdgeOmega(baseMesh, omega, _baseEdgeArea, _baseVertArea, baseMesh.GetVertCount(), zvals);
+  RoundZvalsFromEdgeOmega(baseMesh, omega, _baseEdgeArea, _baseVertArea, baseMesh.GetVertCount(), zvals);
   _baseCWF = CWF(amp, omega, zvals, baseMesh);
   CWF upcwf;
   Subdivide(_baseCWF, upcwf, upsampleTimes, false, &_LoopS0, nullptr, &_upZMat);
@@ -152,12 +152,12 @@ void CWFDecomposition::initialization(int upsampleTimes,           // upsample i
   _upMesh.GetPos(_upV);
   _upMesh.GetFace(_upF);
   igl::per_vertex_normals(_upV, _upF, _upN);
-  _upVertArea = getVertArea(_upMesh);
+  _upVertArea = GetVertArea(_upMesh);
 
-  updateWrinkleCompUpMat();
+  UpdateWrinkleCompUpMat();
 }
 
-void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes,
+void CWFDecomposition::Initialization(const CWF& cwf, int upsampleTimes,
                                       bool isFixedBnd,             // fixed bnd for loop
                                       const Mesh& restMesh,        // rest (coarse) mesh
                                       const Mesh& restWrinkleMesh, // rest (wrinkle) mesh
@@ -186,13 +186,13 @@ void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes,
 
   MeshConnectivity restMeshCon(restF), curMeshCon(curF);
   // clamped amp and omega
-  buildProjectionMat(clampedVert, curMeshCon, curPos.rows());
-  tfwShell =
+  BuildProjectionMat(clampedVert, curMeshCon, curPos.rows());
+  _tfwShell =
       WrinkledTensionField::TFWShell(restPos, restMeshCon, curPos, curMeshCon, poissonRatio, thickness, youngsModulus);
-  tfwShell.initialization();
+  _tfwShell.initialization();
 
-  _baseEdgeArea = getEdgeArea(cwf._mesh);
-  _baseVertArea = getVertArea(cwf._mesh);
+  _baseEdgeArea = GetEdgeArea(cwf._mesh);
+  _baseVertArea = GetVertArea(cwf._mesh);
   _baseCWF = cwf;
 
   CWF upcwf;
@@ -201,9 +201,9 @@ void CWFDecomposition::initialization(const CWF& cwf, int upsampleTimes,
   _upMesh.GetPos(_upV);
   _upMesh.GetFace(_upF);
   igl::per_vertex_normals(_upV, _upF, _upN);
-  _upVertArea = getVertArea(_upMesh);
+  _upVertArea = GetVertArea(_upMesh);
 
-  updateWrinkleCompUpMat();
+  UpdateWrinkleCompUpMat();
 }
 
 struct UnionFind {
@@ -295,7 +295,7 @@ static void combField(const Eigen::MatrixXi& F, const std::vector<Eigen::Matrix2
   }
 }
 
-void CWFDecomposition::initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess,
+void CWFDecomposition::InitializeAmpOmega(const Eigen::MatrixXd& curPos, MeshConnectivity& curMeshCon, double ampGuess,
                                           Eigen::VectorXd& amp, Eigen::MatrixXd& faceOmega) {
   // compute the compression direction per face
   int nfaces = curMeshCon.nFaces();
@@ -306,8 +306,8 @@ void CWFDecomposition::initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshCon
   Eigen::MatrixXd faceOmegaPara(nfaces, 2);
 
   for (int i = 0; i < nfaces; i++) {
-    Eigen::Matrix2d abar = tfwShell.getIbar(i);
-    Eigen::Matrix2d a = tfwShell.getI(i);
+    Eigen::Matrix2d abar = _tfwShell.getIbar(i);
+    Eigen::Matrix2d a = _tfwShell.getI(i);
     Eigen::Matrix2d diff = a - abar;
     Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::Matrix2d> solver(diff, abar);
     Eigen::Vector2d evec = solver.eigenvectors().col(0);
@@ -319,13 +319,13 @@ void CWFDecomposition::initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshCon
 
   // comb vectors
   Eigen::MatrixXd combedOmega;
-  combField(curMeshCon.faces(), tfwShell.getIbars(), nullptr, faceOmegaPara, combedOmega);
+  combField(curMeshCon.faces(), _tfwShell.getIbars(), nullptr, faceOmegaPara, combedOmega);
   std::swap(faceOmegaPara, combedOmega);
   faceOmegaPara /= ampGuess;
 
   faceOmega.resize(nfaces, 3);
   for (int i = 0; i < nfaces; i++) {
-    Eigen::Matrix2d abar = tfwShell.getIbar(i);
+    Eigen::Matrix2d abar = _tfwShell.getIbar(i);
     // get covector
     Eigen::Vector2d covector = abar.inverse() * (faceOmegaPara.row(i).transpose());
 
@@ -361,7 +361,7 @@ void CWFDecomposition::initializeAmpOmega(const Eigen::MatrixXd& curPos, MeshCon
   amp = L * (L * amp);
 }
 
-void CWFDecomposition::updateWrinkleCompUpMat() {
+void CWFDecomposition::UpdateWrinkleCompUpMat() {
   CWF upcwf;
   Subdivide(_baseCWF, upcwf, _upsampleTimes, false, nullptr, nullptr, &_upZMat);
   std::vector<TripletX> T;
@@ -378,7 +378,7 @@ void CWFDecomposition::updateWrinkleCompUpMat() {
   _wrinkleCompUpMat.setFromTriplets(T.begin(), T.end());
 }
 
-void CWFDecomposition::buildProjectionMat(const std::unordered_set<int>& clampedVerts, const MeshConnectivity& meshCon,
+void CWFDecomposition::BuildProjectionMat(const std::unordered_set<int>& clampedVerts, const MeshConnectivity& meshCon,
                                           int nverts) {
   _nFreeAmp = nverts;
   int nedges = meshCon.nEdges();
@@ -437,17 +437,17 @@ void CWFDecomposition::buildProjectionMat(const std::unordered_set<int>& clamped
   _unprojPosMat = _projPosMat.transpose();
 }
 
-void CWFDecomposition::getCWF(CWF& cwf) { cwf = _baseCWF; }
+void CWFDecomposition::GetCWF(CWF& cwf) { cwf = _baseCWF; }
 
-void CWFDecomposition::optimizeAmpOmega() {
-  tfwShell.updateBaseGeometries(_baseCWF._mesh.GetPos());
+void CWFDecomposition::OptimizeAmpOmega() {
+    _tfwShell.updateBaseGeometries(_baseCWF._mesh.GetPos());
   Eigen::VectorXd amp = _baseCWF._amp;
   Eigen::VectorXd omega = _baseCWF._omega;
 
   int nverts = _baseCWF._mesh.GetVertCount();
   int nedges = _baseCWF._mesh.GetEdgeCount();
 
-  omega = swapEdgeVec(_baseCWF._mesh.GetFace(), omega, 1);
+  omega = SwapEdgeVec(_baseCWF._mesh.GetFace(), omega, 1);
   auto omega0 = omega;
   auto amp0 = amp;
 
@@ -486,7 +486,7 @@ void CWFDecomposition::optimizeAmpOmega() {
   auto TFWEnergy = [&](const Eigen::VectorXd& x, Eigen::VectorXd* grad, Eigen::SparseMatrix<double>* hess,
                        bool isProj) {
     convert2TFW(x); // convert the TFW variables:  amp and omega. Attention: TFW.omega is a permutation of CWF.omega
-    double energy = tfwShell.elasticReducedEnergy(amp, omega, grad, hess, isProj);
+    double energy = _tfwShell.elasticReducedEnergy(amp, omega, grad, hess, isProj);
 
     if (grad) (*grad) = _projTFWMat * (*grad);
     if (hess) (*hess) = _projTFWMat * (*hess) * _unprojTFWMat;
@@ -515,18 +515,18 @@ void CWFDecomposition::optimizeAmpOmega() {
 
 
   _baseCWF._amp = amp;
-  _baseCWF._omega = swapEdgeVec(_baseCWF._mesh.GetFace(), omega, 0);
+  _baseCWF._omega = SwapEdgeVec(_baseCWF._mesh.GetFace(), omega, 0);
 }
 
-void CWFDecomposition::optimizePhase() {
+void CWFDecomposition::OptimizePhase() {
   std::cout << "\n update vertex phase: " << std::endl;
-  precomputationForPhase();
+  PrecomputationForPhase();
   VectorX zvec = _baseCWF._zvals;
   int nverts = _baseCWF._mesh.GetVertCount();
 
   VectorX z0 = zvec;
   z0.setZero();
-  double diff0 = computeDifferenceFromZvals(z0);
+  double diff0 = ComputeDifferenceFromZvals(z0);
 
   auto zvalEnergy = [&](const Eigen::VectorXd& x, Eigen::VectorXd* grad, Eigen::SparseMatrix<double>* hess,
                         bool isProj) {
@@ -535,10 +535,10 @@ void CWFDecomposition::optimizePhase() {
 
     Eigen::VectorXd unitGrad;
     SparseMatrixX unitHess;
-    double unitEnergy = computeUnitNormEnergy(zvec, grad ? &unitGrad : nullptr, hess ? &unitHess : nullptr, isProj);
+    double unitEnergy = ComputeUnitNormEnergy(zvec, grad ? &unitGrad : nullptr, hess ? &unitHess : nullptr, isProj);
 
-    /*double compatEnergy = computeCompatibilityEnergy(_baseCWF._omega, zvec);
-    double diffEnergy = computeDifferenceFromZvals(zvec);*/
+    /*double compatEnergy = ComputeCompatibilityEnergy(_baseCWF._omega, zvec);
+    double diffEnergy = ComputeDifferenceFromZvals(zvec);*/
 
     double rc = 1e-3;
     double runit = 1e-3;
@@ -558,16 +558,16 @@ void CWFDecomposition::optimizePhase() {
   _baseCWF._zvals = zvec;
 }
 
-void CWFDecomposition::optimizeBasemesh() {
+void CWFDecomposition::OptimizeBasemesh() {
   std::cout << "\n update base mesh" << std::endl;
   // base mesh update
-  precomptationForBaseMesh();
+  PrecomputationForBaseMesh();
   MatrixX pos = _baseCWF._mesh.GetPos();
   int nverts = _baseCWF._mesh.GetVertCount();
 
   MatrixX zeros = pos;
   zeros.setZero();
-  double diff0 = computeDifferenceFromBasemesh(zeros);
+  double diff0 = ComputeDifferenceFromBasemesh(zeros);
 
   VectorX fixedPos = VectorX::Zero(3 * nverts);
   std::vector<Eigen::Triplet<double>> freeT;
@@ -609,20 +609,20 @@ void CWFDecomposition::optimizeBasemesh() {
 
   auto findMaxStep = [&](const Eigen::VectorXd& x, const Eigen::VectorXd& dir) -> double { return 1.0; };
 
-  Eigen::VectorXd x = _projPosMat * flatMatrix(pos);
+  Eigen::VectorXd x = _projPosMat * FlatMatrix(pos);
   NewtonSolver(posEnergy, findMaxStep, x, 1000, 1e-6, 1e-15, 1e-15, true);
   Eigen::VectorXd fullx = _unprojPosMat * x + fixedPos;
 
-  /*Eigen::MatrixXd newPos = unFlatVector(fullx, 3);
+  /*Eigen::MatrixXd newPos = UnFlatVector(fullx, 3);
   for (int i = 0; i < newPos.rows(); i++)
   {
       std::cout << newPos.row(i) << " || " << _baseCWF._mesh.GetVertPos(i).transpose() << std::endl;
   }*/
-  igl::writeOBJ("after_update_basemesh.obj", unFlatVector(fullx, 3), _baseCWF._mesh.GetFace());
-  _baseCWF._mesh.SetPos(unFlatVector(fullx, 3));
+  igl::writeOBJ("after_update_basemesh.obj", UnFlatVector(fullx, 3), _baseCWF._mesh.GetFace());
+  _baseCWF._mesh.SetPos(UnFlatVector(fullx, 3));
 }
 
-void CWFDecomposition::optimizeCWF() {
+void CWFDecomposition::OptimizeCWF() {
 
   // alternative update
   for (int i = 0; i < 1; i++) {
@@ -638,20 +638,20 @@ void CWFDecomposition::optimizeCWF() {
     //
     //		MeshConnectivity curMeshCon(curF);
     //
-    //		initializeAmpOmega(curPos, curMeshCon, _baseCWF._amp.maxCoeff(), amp, faceOmega);
-    //		omega = faceVec2IntrinsicEdgeVec(faceOmega, _baseCWF._mesh);
+    //		InitializeAmpOmega(curPos, curMeshCon, _baseCWF._amp.maxCoeff(), amp, faceOmega);
+    //		omega = FaceVec2IntrinsicEdgeVec(faceOmega, _baseCWF._mesh);
     //		_baseCWF._amp = amp;
     //		_baseCWF._omega = omega;
 
-    optimizePhase();
-    optimizeBasemesh();
+    OptimizePhase();
+    OptimizeBasemesh();
   }
 }
 
 ///////////////////////////////////  vertex phase update energies
 /////////////////////////////////////////////////////////////
-void CWFDecomposition::precomputationForPhase() {
-  updateWrinkleCompUpMat();
+void CWFDecomposition::PrecomputationForPhase() {
+  UpdateWrinkleCompUpMat();
   _upAmp = _LoopS0 * _baseCWF._amp;
 
   // compaptibility hessian
@@ -706,7 +706,7 @@ void CWFDecomposition::precomputationForPhase() {
   _zvalDiffCoeff = _wrinkleCompUpMat.transpose() * _zvalDiffCoeff;
 }
 
-double CWFDecomposition::computeCompatibilityEnergy(const VectorX& omega, const VectorX& zvals, VectorX* grad,
+double CWFDecomposition::ComputeCompatibilityEnergy(const VectorX& omega, const VectorX& zvals, VectorX* grad,
                                                     SparseMatrixX* hess) {
   std::vector<TripletX> AT;
   int nedges = _baseCWF._mesh.GetEdgeCount();
@@ -763,7 +763,7 @@ double CWFDecomposition::computeCompatibilityEnergy(const VectorX& omega, const 
   return energy;
 }
 
-double CWFDecomposition::computeDifferenceFromZvals(const VectorX& zvals, VectorX* grad, SparseMatrixX* hess) {
+double CWFDecomposition::ComputeDifferenceFromZvals(const VectorX& zvals, VectorX* grad, SparseMatrixX* hess) {
   VectorX upZvals = _upZMat * zvals;
 
   double energy = 0;
@@ -802,7 +802,7 @@ double CWFDecomposition::computeDifferenceFromZvals(const VectorX& zvals, Vector
   return energy;
 }
 
-double CWFDecomposition::computeUnitNormEnergy(const VectorX& zvals, VectorX* grad, SparseMatrixX* hess, bool isProj) {
+double CWFDecomposition::ComputeUnitNormEnergy(const VectorX& zvals, VectorX* grad, SparseMatrixX* hess, bool isProj) {
   int nverts = zvals.rows() / 2;
   double energy = 0;
 
@@ -846,23 +846,23 @@ double CWFDecomposition::computeUnitNormEnergy(const VectorX& zvals, VectorX* gr
   return energy;
 }
 
-void CWFDecomposition::testDifferenceFromZvals(const VectorX& zvals) {
+void CWFDecomposition::TestDifferenceFromZvals(const VectorX& zvals) {
   VectorX z0 = zvals, z = zvals;
   z0.setZero();
-  double f0 = computeDifferenceFromZvals(z0);
+  double f0 = ComputeDifferenceFromZvals(z0);
 
   z.setRandom();
-  double f = computeDifferenceFromZvals(z);
+  double f = ComputeDifferenceFromZvals(z);
   int nverts = z.rows() / 2;
 
   std::cout << "f - (0.5 x H x + b x + f0): " << f - (f0 + _zvalDiffCoeff.dot(z) + 0.5 * z.dot(_zvalDiffHess * z))
             << std::endl;
 
-  double cf = computeCompatibilityEnergy(_baseCWF._omega, z);
+  double cf = ComputeCompatibilityEnergy(_baseCWF._omega, z);
   std::cout << "cf - 0.5 x H x: " << cf - 0.5 * z.dot(_zvalCompHess * z) << std::endl;
 }
 
-VectorX CWFDecomposition::flatMatrix(const MatrixX& x) {
+VectorX CWFDecomposition::FlatMatrix(const MatrixX& x) {
   auto rows = x.rows();
   auto cols = x.cols();
   VectorX v(rows * cols);
@@ -874,7 +874,7 @@ VectorX CWFDecomposition::flatMatrix(const MatrixX& x) {
   return v;
 }
 
-MatrixX CWFDecomposition::unFlatVector(const VectorX& v, Eigen::Index cols) {
+MatrixX CWFDecomposition::UnFlatVector(const VectorX& v, Eigen::Index cols) {
   auto size = v.size();
   if (size % cols != 0) {
     std::cerr << "conversion failed. vector size: " << size << ", desired cols: " << cols << std::endl;
@@ -891,7 +891,7 @@ MatrixX CWFDecomposition::unFlatVector(const VectorX& v, Eigen::Index cols) {
 }
 
 /////////////////////////////////// base mesh update energies //////////////////////////////////////////////////////////
-void CWFDecomposition::precomptationForBaseMesh() {
+void CWFDecomposition::PrecomputationForBaseMesh() {
   // normal update. We fixed the _upN
   VectorX upZvals = _upZMat * _baseCWF._zvals;
   _normalWrinkleUpdates = _upN;
@@ -923,11 +923,11 @@ void CWFDecomposition::precomptationForBaseMesh() {
   SparseMatrixX tmpMat = liftedUpsampleMat.transpose() * massMat;
   _baseMeshDiffHess = tmpMat * liftedUpsampleMat;
 
-  VectorX diff = flatMatrix(_wrinkledV - _normalWrinkleUpdates);
+  VectorX diff = FlatMatrix(_wrinkledV - _normalWrinkleUpdates);
   _baseMeshDiffCoeff = -tmpMat * diff;
 }
 
-double CWFDecomposition::computeDifferenceFromBasemesh(const MatrixX& pos, VectorX* grad, SparseMatrixX* hess) {
+double CWFDecomposition::ComputeDifferenceFromBasemesh(const MatrixX& pos, VectorX* grad, SparseMatrixX* hess) {
   double energy = 0;
   MatrixX upPos = _LoopS0 * pos;
 
@@ -939,18 +939,18 @@ double CWFDecomposition::computeDifferenceFromBasemesh(const MatrixX& pos, Vecto
   return energy;
 }
 
-void CWFDecomposition::testDifferenceFromBasemesh(const MatrixX& pos) {
+void CWFDecomposition::TestDifferenceFromBasemesh(const MatrixX& pos) {
   MatrixX pos0 = pos;
-  precomputationForPhase();
-  precomptationForBaseMesh();
+  PrecomputationForPhase();
+  PrecomputationForBaseMesh();
 
   pos0.setZero();
-  double energy0 = computeDifferenceFromBasemesh(pos0, nullptr, nullptr);
+  double energy0 = ComputeDifferenceFromBasemesh(pos0, nullptr, nullptr);
 
   pos0.setRandom();
-  double energy1 = computeDifferenceFromBasemesh(pos0, nullptr, nullptr);
+  double energy1 = ComputeDifferenceFromBasemesh(pos0, nullptr, nullptr);
 
-  VectorX flatPos = flatMatrix(pos0);
+  VectorX flatPos = FlatMatrix(pos0);
   double energy2 = energy0 + _baseMeshDiffCoeff.dot(flatPos) + 0.5 * flatPos.dot(_baseMeshDiffHess * flatPos);
 
   std::cout << "f - (0.5 x H x + b x + f0): " << energy1 - energy2 << std::endl;

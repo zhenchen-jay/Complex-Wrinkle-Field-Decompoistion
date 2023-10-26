@@ -7,7 +7,7 @@
 #include <iostream>
 
 
-void computeEdgeMatrix(const Mesh& mesh, const VectorX& edgeW, const VectorX& edgeWeight, const int nverts,
+void ComputeEdgeMatrix(const Mesh& mesh, const VectorX& edgeW, const VectorX& edgeWeight, const int nverts,
                        SparseMatrixX& A) {
   std::vector<TripletX> AT;
   int nedges = mesh.GetEdgeCount();
@@ -39,7 +39,7 @@ void computeEdgeMatrix(const Mesh& mesh, const VectorX& edgeW, const VectorX& ed
   A.setFromTriplets(AT.begin(), AT.end());
 }
 
-void computeEdgeMatrixGivenMag(const Mesh& mesh, const VectorX& edgeW, const VectorX& vertAmp,
+void ComputeEdgeMatrixGivenMag(const Mesh& mesh, const VectorX& edgeW, const VectorX& vertAmp,
                                const VectorX& edgeWeight, const int nverts, SparseMatrixX& A) {
   std::vector<TripletX> AT;
   int nedges = mesh.GetEdgeCount();
@@ -76,7 +76,7 @@ void computeEdgeMatrixGivenMag(const Mesh& mesh, const VectorX& edgeW, const Vec
   A.setFromTriplets(AT.begin(), AT.end());
 }
 
-void roundZvalsFromEdgeOmega(const Mesh& mesh, const VectorX& edgeW, const VectorX& edgeWeight, const VectorX& vertArea,
+void RoundZvalsFromEdgeOmega(const Mesh& mesh, const VectorX& edgeW, const VectorX& edgeWeight, const VectorX& vertArea,
                              int nverts, VectorX& zvals) {
   std::vector<TripletX> BT;
   int nfaces = mesh.GetFaceCount();
@@ -89,7 +89,7 @@ void roundZvalsFromEdgeOmega(const Mesh& mesh, const VectorX& edgeW, const Vecto
 
 
   SparseMatrixX A;
-  computeEdgeMatrix(mesh, edgeW, edgeWeight, nverts, A);
+  ComputeEdgeMatrix(mesh, edgeW, edgeWeight, nverts, A);
 
   SparseMatrixX B(2 * nverts, 2 * nverts);
   B.setFromTriplets(BT.begin(), BT.end());
@@ -114,10 +114,10 @@ void roundZvalsFromEdgeOmega(const Mesh& mesh, const VectorX& edgeW, const Vecto
   std::cout << "Eigenvalue is " << evalues[0] << std::endl;
 
   zvals = evecs.col(0);
-  zvals = normalizeZvals(zvals);
+  zvals = NormalizeZvals(zvals);
 }
 
-void roundZvalsFromEdgeOmegaVertexMag(const Mesh& mesh, const VectorX& edgeW, const VectorX& vertAmp,
+void RoundZvalsFromEdgeOmegaVertexMag(const Mesh& mesh, const VectorX& edgeW, const VectorX& vertAmp,
                                       const VectorX& edgeWeight, const VectorX& vertArea, int nverts,
                                       VectorX& zvals) {
   std::vector<TripletX> BT;
@@ -130,7 +130,7 @@ void roundZvalsFromEdgeOmegaVertexMag(const Mesh& mesh, const VectorX& edgeW, co
   }
 
   SparseMatrixX A;
-  computeEdgeMatrixGivenMag(mesh, edgeW, vertAmp, edgeWeight, nverts, A);
+  ComputeEdgeMatrixGivenMag(mesh, edgeW, vertAmp, edgeWeight, nverts, A);
 
   Eigen::CholmodSupernodalLLT<SparseMatrixX> solver;
   SparseMatrixX I = A;
@@ -172,5 +172,5 @@ void roundZvalsFromEdgeOmegaVertexMag(const Mesh& mesh, const VectorX& edgeW, co
   std::cout << "Eigenvalue is " << evalues[0] << std::endl;
 
   zvals = evecs.col(0);
-  zvals = normalizeZvals(zvals);
+  zvals = NormalizeZvals(zvals);
 }

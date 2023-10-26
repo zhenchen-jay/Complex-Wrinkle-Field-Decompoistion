@@ -1,7 +1,7 @@
 #include "LoadSaveIO.h"
 #include <iomanip>
 
-bool loadEdgeOmega(const std::string& filename, const int& nlines, VectorX& edgeOmega) {
+bool LoadEdgeOmega(const std::string& filename, const int& nlines, VectorX& edgeOmega) {
   std::ifstream infile(filename);
   if (!infile) {
     std::cerr << "invalid edge omega file name" << std::endl;
@@ -28,7 +28,7 @@ bool loadEdgeOmega(const std::string& filename, const int& nlines, VectorX& edge
   return true;
 }
 
-bool loadVertexZvals(const std::string& filePath, const int& nlines, VectorX& zvals) {
+bool LoadVertexZvals(const std::string& filePath, const int& nlines, VectorX& zvals) {
   std::ifstream zfs(filePath);
   if (!zfs) {
     std::cerr << "invalid zvals file name" << std::endl;
@@ -50,7 +50,7 @@ bool loadVertexZvals(const std::string& filePath, const int& nlines, VectorX& zv
   return true;
 }
 
-bool loadVertexAmp(const std::string& filePath, const int& nlines, VectorX& amp) {
+bool LoadVertexAmp(const std::string& filePath, const int& nlines, VectorX& amp) {
   std::ifstream afs(filePath);
 
   if (!afs) {
@@ -72,7 +72,7 @@ bool loadVertexAmp(const std::string& filePath, const int& nlines, VectorX& amp)
   return true;
 }
 
-bool saveEdgeOmega(const std::string& filename, const VectorX& edgeOmega) {
+bool SaveEdgeOmega(const std::string& filename, const VectorX& edgeOmega) {
   std::ofstream wfs(filename);
   if (!wfs) {
     std::cerr << "invalid omega file name" << std::endl;
@@ -82,7 +82,7 @@ bool saveEdgeOmega(const std::string& filename, const VectorX& edgeOmega) {
   return true;
 }
 
-bool saveVertexZvals(const std::string& filePath, const VectorX& zvals) {
+bool SaveVertexZvals(const std::string& filePath, const VectorX& zvals) {
   std::ofstream zfs(filePath);
   if (!zfs) {
     std::cerr << "invalid zvals file name" << std::endl;
@@ -97,7 +97,7 @@ bool saveVertexZvals(const std::string& filePath, const VectorX& zvals) {
   return true;
 }
 
-bool saveVertexAmp(const std::string& filePath, const VectorX& amp) {
+bool SaveVertexAmp(const std::string& filePath, const VectorX& amp) {
   std::ofstream afs(filePath);
   if (!afs) {
     std::cerr << "invalid amplitude file name" << std::endl;
@@ -105,4 +105,64 @@ bool saveVertexAmp(const std::string& filePath, const VectorX& amp) {
   }
   afs << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << amp << std::endl;
   return true;
+}
+
+void SaveDphi4Render(const MatrixX& faceOmega, const Mesh& mesh, const std::string& filename) {
+    int nfaces = mesh.GetFaceCount();
+    std::ofstream dpfs(filename);
+
+    for (int f = 0; f < nfaces; f++) {
+        std::vector<int> faceVerts = mesh.GetFaceVerts(f);
+        Eigen::Vector3d e0 = mesh.GetVertPos(faceVerts[1]) - mesh.GetVertPos(faceVerts[0]);
+        Eigen::Vector3d e1 = mesh.GetVertPos(faceVerts[2]) - mesh.GetVertPos(faceVerts[0]);
+
+        Eigen::Vector2d rhs;
+        double u = faceOmega.row(f).dot(e0);
+        double v = faceOmega.row(f).dot(e1);
+
+        rhs << u, v;
+        Eigen::Matrix2d I;
+        I << e0.dot(e0), e0.dot(e1), e1.dot(e0), e1.dot(e1);
+        rhs = I.inverse() * rhs;
+
+        dpfs << rhs(0) << ",\t" << rhs(1) << ",\t" << 0 << ",\t" << 0 << ",\t" << 0 << ",\t" << 0 << std::endl;
+    }
+}
+
+void SaveAmp4Render(const VectorX& vertAmp, const std::string& filename, double ampMin, double ampMax) {
+    std::ofstream afs(filename);
+    if (ampMin >= ampMax) ampMin = 0;
+    ampMin = 0;
+
+    for (int j = 0; j < vertAmp.rows(); j++) {
+        afs << std::setprecision(std::numeric_limits<long double>::digits10 + 1)
+            << (vertAmp[j] - ampMin) / (ampMax - ampMin) << ",\t" << 3.14159 << std::endl;
+    }
+}
+
+
+void SavePhi4Render(const VectorX& vertPhi, const std::string& fileName) {
+    std::ofstream pfs(fileName);
+    for (int j = 0; j < vertPhi.rows(); j++) {
+        pfs << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << vertPhi[j] << ",\t" << 3.14159
+            << std::endl;
+    }
+}
+
+void SaveFlag4Render(const Eigen::VectorXi& faceFlags, const std::string& filename) {
+    std::ofstream ffs(filename);
+
+    for (int j = 0; j < faceFlags.rows(); j++) {
+        ffs << faceFlags(j) << ",\t" << 3.14159 << std::endl;
+    }
+}
+
+void SaveSourcePts4Render(const Eigen::VectorXi& vertFlags, const MatrixX& vertVecs, const VectorX& vertAmp,
+                          const std::string& flagfilename) {
+    std::ofstream ffs(flagfilename);
+
+    for (int j = 0; j < vertFlags.rows(); j++) {
+        ffs << vertFlags(j) << ",\t" << vertAmp(j) << ",\t" << vertVecs(j, 0) << ",\t" << vertVecs(j, 1) << ",\t"
+            << vertVecs(j, 2) << std::endl;
+    }
 }

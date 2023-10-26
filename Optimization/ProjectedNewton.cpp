@@ -4,7 +4,7 @@
 #include <Eigen/CholmodSupport>
 #include "../Timer.h"
 
-static void identifyBindingSet(const Eigen::VectorXd& x, const Eigen::VectorXd& dir, const Eigen::VectorXd& lx, const Eigen::VectorXd& ux, Eigen::VectorXi& flag, double tol = 1e-7)
+static void IdentifyBindingSet(const Eigen::VectorXd& x, const Eigen::VectorXd& dir, const Eigen::VectorXd& lx, const Eigen::VectorXd& ux, Eigen::VectorXi& flag, double tol = 1e-7)
 {
 	const int DIM = x.rows();
 	if (flag.size() != DIM)
@@ -28,7 +28,7 @@ static void identifyBindingSet(const Eigen::VectorXd& x, const Eigen::VectorXd& 
 	}
 }
 
-void projectedNewtonSolver(std::function<double(const Eigen::VectorXd&, Eigen::VectorXd*, Eigen::SparseMatrix<double>*, bool)> objFunc, std::function<double(const Eigen::VectorXd&, const Eigen::VectorXd&)> findMaxStep, const Eigen::VectorXd& lx, const Eigen::VectorXd& ux, Eigen::VectorXd& x0, int numIter, double gradTol, double xTol, double fTol, bool displayInfo)
+void ProjectedNewtonSolver(std::function<double(const Eigen::VectorXd&, Eigen::VectorXd*, Eigen::SparseMatrix<double>*, bool)> objFunc, std::function<double(const Eigen::VectorXd&, const Eigen::VectorXd&)> findMaxStep, const Eigen::VectorXd& lx, const Eigen::VectorXd& ux, Eigen::VectorXd& x0, int numIter, double gradTol, double xTol, double fTol, bool displayInfo)
 {
 	const int DIM = x0.rows();
 
@@ -187,8 +187,8 @@ void projectedNewtonSolver(std::function<double(const Eigen::VectorXd&, Eigen::V
 		Eigen::VectorXi bindingsetFlag(DIM);
 		bindingsetFlag.setZero();
 
-		identifyBindingSet(x0, neggrad, lx, ux, bindingsetFlag, gradTol / std::sqrt(DIM));
-		identifyBindingSet(x0, delta_x, lx, ux, bindingsetFlag, gradTol / std::sqrt(DIM));
+		IdentifyBindingSet(x0, neggrad, lx, ux, bindingsetFlag, gradTol / std::sqrt(DIM));
+		IdentifyBindingSet(x0, delta_x, lx, ux, bindingsetFlag, gradTol / std::sqrt(DIM));
 
 		// project the direction
 		delta_x = freeDOFsProj(delta_x, bindingsetFlag);
@@ -196,7 +196,7 @@ void projectedNewtonSolver(std::function<double(const Eigen::VectorXd&, Eigen::V
 		maxStepSize = findMaxStep(x0, delta_x);
 
 		localTimer.start();
-		double rate = armijoLineSearch(x0, grad, delta_x, objFunc, maxStepSize, bbxProj);
+		double rate = ArmijoLineSearch(x0, grad, delta_x, objFunc, maxStepSize, bbxProj);
 		localTimer.stop();
 		double localLinesearchTime = localTimer.elapsed<std::chrono::milliseconds>() * 1e-3;
 		totalLineSearchTime += localLinesearchTime;
@@ -298,14 +298,14 @@ void testProjectedNewton()
 	Eigen::VectorXd lx(2), ux(2);
 	lx << 1.2, 1.5;
 	ux.setConstant(std::numeric_limits<double>::max());
-	projectedNewtonSolver(objFunc, findMaxStep, lx, ux, x, 1000, 1e-6, 1e-15, 1e-15, true);
+	ProjectedNewtonSolver(objFunc, findMaxStep, lx, ux, x, 1000, 1e-6, 1e-15, 1e-15, true);
 	std::cout << "only lx: " << lx.transpose() << std::endl;
 	std::cout << "sol: " << x.transpose() << std::endl;
 
 	ux << 2.3, 2.1;
 	lx[0] = std::numeric_limits<double>::min();
 	x = x0;
-	projectedNewtonSolver(objFunc, findMaxStep, lx, ux, x, 1000, 1e-6, 1e-15, 1e-15, true);
+	ProjectedNewtonSolver(objFunc, findMaxStep, lx, ux, x, 1000, 1e-6, 1e-15, 1e-15, true);
 	std::cout << "with ux: " << ux.transpose() << std::endl;
 	std::cout << "sol: " << x.transpose() << std::endl;
 }

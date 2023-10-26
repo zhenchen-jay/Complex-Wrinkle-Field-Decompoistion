@@ -4,6 +4,6 @@
 #include <Eigen/Sparse>
 #include <iostream>
 
-void testFuncGradHessian(
+void TestFuncGradHessian(
     std::function<double(const Eigen::VectorXd&, Eigen::VectorXd*, Eigen::SparseMatrix<double>*, bool)> objFunc,
     const Eigen::VectorXd& x0);

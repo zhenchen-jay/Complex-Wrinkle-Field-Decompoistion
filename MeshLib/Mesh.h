@@ -1,5 +1,4 @@
-#ifndef MESH_H
-#define MESH_H
+#pragma once
 
 #include "types.h"
 #include "utils.h"
@@ -150,13 +149,12 @@ public:
     void Triangulate();
 
 protected:
-    void _CheckValidity() const;
+    void CheckValidity() const;
 
-    void _SortOneRings();
+    void SortOneRings();
 
-    bool _AreFacesTris() const;
+    bool AreFacesTris() const;
 
-    bool _AreFacesQuads() const;
+    bool AreFacesQuads() const;
 };
 
-#endif // MESH_H

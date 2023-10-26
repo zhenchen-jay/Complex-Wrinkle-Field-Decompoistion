@@ -61,8 +61,8 @@ void Subdivide(const CWF& cwf,             // input CWF
                SparseMatrixX* upS1,        // upsampling matrix
                SparseMatrixX* upComplexS0) // upsampling matrix
 {
-  std::unique_ptr<BaseLoop> cloopPtr = std::make_unique<ComplexLoop>();
-  std::unique_ptr<BaseLoop> loopPtr = std::make_unique<StandardLoop>();
+  std::unique_ptr<BaseLoop> cloopPtr = std::make_unique<ComplexLoop>(); // for the wrinkle variables (z and omega) subdivision
+  std::unique_ptr<BaseLoop> loopPtr = std::make_unique<StandardLoop>(); // for the base mesh and amplitude subdivision
 
   int nverts = cwf._mesh.GetVertCount();
   int nedges = cwf._mesh.GetEdgeCount();

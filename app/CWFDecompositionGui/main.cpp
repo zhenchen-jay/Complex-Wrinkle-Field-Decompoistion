@@ -1,36 +1,22 @@
 #include "polyscope/pick.h"
-#include "polyscope/polyscope.h"
-
-#include "polyscope/messages.h"
 #include "polyscope/point_cloud.h"
 #include "polyscope/surface_mesh.h"
-#include "polyscope/view.h"
 #include <igl/boundary_loop.h>
-#include <igl/cotmatrix_entries.h>
-#include <igl/cylinder.h>
-#include <igl/doublearea.h>
 #include <igl/file_dialog_open.h>
 #include <igl/file_dialog_save.h>
-#include <igl/invert_diag.h>
-#include <igl/loop.h>
-#include <igl/per_vertex_normals.h>
 #include <igl/readOBJ.h>
 #include <igl/writeOBJ.h>
 
 #include <filesystem>
 #include <iostream>
-#include <utility>
 
 #include "../../CommonTools.h"
 #include "../../LoadSaveIO.h"
-#include "../../MeshLib/Mesh.h"
 #include "../../PaintGeometry.h"
 #include "../../json.hpp"
 
 #include "../../Decomposition/CWFDecomposition.h"
 #include "../../KnoppelStripePatterns.h"
-#include "../../Upsampling/BaseLoop.h"
-#include "../../Upsampling/ComplexLoop.h"
 #include "../../Upsampling/Subdivision.h"
 
 
@@ -165,8 +151,8 @@ int updateViewHelper(const MatrixX& basePos, const Eigen::MatrixXi& baseFaces, c
     polyscope::getSurfaceMesh("upsampled phase mesh" + meshSuffix)->translate({curShift * shiftx, shifty, 0});
   }
 
-  mPaint.setNormalization(false);
-  MatrixX phaseColor = mPaint.paintPhi(upsampledPhase);
+  mPaint.SetNormalization(false);
+  MatrixX phaseColor = mPaint.PaintPhi(upsampledPhase);
   auto phasePatterns =
       polyscope::getSurfaceMesh("upsampled phase mesh" + meshSuffix)->addVertexColorQuantity("vertex phi", phaseColor);
   phasePatterns->setEnabled(true);
@@ -223,16 +209,16 @@ void subdivideMeshHelper(const ComplexWrinkleField::CWF& cwf, ComplexWrinkleFiel
                          VectorX& upsampledAmp) {
   ComplexWrinkleField::Subdivide(cwf, upcwf, upLevel, isFixedBoundary);
 
-  rescaleZvals(upcwf._zvals, upcwf._amp, upsampledZvals);
+  RescaleZvals(upcwf._zvals, upcwf._amp, upsampledZvals);
   upsampledMesh = upcwf._mesh;
   upsampledMesh.GetPos(upsampledV);
   upsampledMesh.GetFace(upsampledF);
-  getWrinkledMesh(upsampledV, upsampledF, upsampledZvals, wrinkledPos, wrinkleAmpRatio, false);
+  GetWrinkledMesh(upsampledV, upsampledF, upsampledZvals, wrinkledPos, wrinkleAmpRatio, false);
   wrinkledFace = upsampledF;
 
 
-  faceOmega = intrinsicEdgeVec2FaceVec(cwf._omega, cwf._mesh);
-  upsampledFaceOmega = intrinsicEdgeVec2FaceVec(upcwf._omega, upcwf._mesh);
+  faceOmega = IntrinsicEdgeVec2FaceVec(cwf._omega, cwf._mesh);
+  upsampledFaceOmega = IntrinsicEdgeVec2FaceVec(upcwf._omega, upcwf._mesh);
 
 
   upsampledAmp.setZero(upsampledZvals.size() / 2);
@@ -300,27 +286,27 @@ bool loadProblem(std::string loadFileName = "") {
   }
   std::cout << "wrinkle amplitude scaling ratio: " << wrinkleAmpRatio << std::endl;
 
-  if (!loadEdgeOmega(workingFolder + initOmegaPath, nedges, omega)) {
+  if (!LoadEdgeOmega(workingFolder + initOmegaPath, nedges, omega)) {
     std::cout << "missing init edge omega file." << std::endl;
     return false;
   }
 
   // convert old stored edge omega to the current order
-  omega = swapEdgeVec(triF, omega, 0);
+  omega = SwapEdgeVec(triF, omega, 0);
   std::cout << "convert finished, omega size: " << omega.rows() << std::endl;
 
-  if (!loadVertexZvals(workingFolder + initZValsPath, triV.rows(), zvals)) {
+  if (!LoadVertexZvals(workingFolder + initZValsPath, triV.rows(), zvals)) {
     std::cout << "missing init zval file, try to load amp file, and round zvals from amp and omega" << std::endl;
-    if (!loadVertexAmp(workingFolder + initAmpPath, triV.rows(), amp)) {
+    if (!LoadVertexAmp(workingFolder + initAmpPath, triV.rows(), amp)) {
       std::cout << "missing init amp file: " << std::endl;
       return false;
     }
 
     else {
       VectorX edgeArea, vertArea;
-      edgeArea = getEdgeArea(baseMesh);
-      vertArea = getVertArea(baseMesh);
-      roundZvalsFromEdgeOmegaVertexMag(baseMesh, omega, amp, edgeArea, vertArea, nverts, zvals);
+      edgeArea = GetEdgeArea(baseMesh);
+      vertArea = GetVertArea(baseMesh);
+      RoundZvalsFromEdgeOmegaVertexMag(baseMesh, omega, amp, edgeArea, vertArea, nverts, zvals);
     }
   } else {
     amp.setZero(triV.rows());
@@ -337,14 +323,14 @@ bool loadProblem(std::string loadFileName = "") {
   for (auto& z : refZvals) z *= 2.0;
 
   VectorX edgeArea, vertArea;
-  edgeArea = getEdgeArea(baseMesh);
-  vertArea = getVertArea(baseMesh);
-  roundZvalsFromEdgeOmegaVertexMag(baseMesh, refOmega, refAmp, edgeArea, vertArea, nverts, refZvals);
+  edgeArea = GetEdgeArea(baseMesh);
+  vertArea = GetVertArea(baseMesh);
+  RoundZvalsFromEdgeOmegaVertexMag(baseMesh, refOmega, refAmp, edgeArea, vertArea, nverts, refZvals);
 
   amp = refAmp;
   omega = refOmega;
-  baseCWF = ComplexWrinkleField::CWF(amp, omega, normalizeZvals(zvals), baseMesh);
-  baseRefCWF = ComplexWrinkleField::CWF(refAmp, refOmega, normalizeZvals(refZvals), baseMesh);
+  baseCWF = ComplexWrinkleField::CWF(amp, omega, NormalizeZvals(zvals), baseMesh);
+  baseRefCWF = ComplexWrinkleField::CWF(refAmp, refOmega, NormalizeZvals(refZvals), baseMesh);
 
 
   std::cout << "start to subdivide" << std::endl;
@@ -383,7 +369,7 @@ void callback() {
   if (ImGui::CollapsingHeader("Visualization Options", ImGuiTreeNodeFlags_DefaultOpen)) {
     if (ImGui::InputDouble("wrinkle amp scaling ratio", &wrinkleAmpRatio)) {
       if (wrinkleAmpRatio >= 0) {
-        getWrinkledMesh(refUpV, refUpF, refUpZvals, refWrinkledV, wrinkleAmpRatio, false);
+        GetWrinkledMesh(refUpV, refUpF, refUpZvals, refWrinkledV, wrinkleAmpRatio, false);
         updateView();
       }
     }
@@ -396,21 +382,21 @@ void callback() {
     refWrinkledMesh.SetPos(refWrinkledV);
 
     ComplexWrinkleField::CWFDecomposition decompModel(refWrinkledMesh);
-    decompModel.initialization(baseCWF, upsampleTimes);
+    decompModel.Initialization(baseCWF, upsampleTimes);
 
     MatrixX pos;
     baseCWF._mesh.GetPos(pos);
 
     
-    decompModel.optimizePhase();
+    decompModel.OptimizePhase();
     // decompModel.precomputationForPhase();
-    decompModel.optimizeBasemesh();
-    decompModel.getCWF(baseCWF);
+    decompModel.OptimizeBasemesh();
+    decompModel.GetCWF(baseCWF);
 
     VectorX unitZvals = baseCWF._zvals;
     omega = baseCWF._omega;
     amp = baseCWF._amp;
-    rescaleZvals(unitZvals, amp, zvals);
+    RescaleZvals(unitZvals, amp, zvals);
     subdivideMesh(false);
     updateView(false);
     
