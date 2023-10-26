@@ -1,18 +1,26 @@
 #pragma once
 
-#include "MeshLib/types.h"
 #include "MeshLib/Mesh.h"
+#include "MeshLib/types.h"
 
-class CWF
-{
+namespace ComplexWrinkleField {
+class CWF {
 public:
-	CWF();
-	CWF(const VectorX& amp, const VectorX& omega, const ComplexVectorX& zvals, const Mesh& mesh);
+  CWF() {}
+  CWF(const VectorX& amp, const VectorX& omega, const VectorX& zvals, const Mesh& mesh) {
+    initialization(amp, omega, zvals, mesh);
+  }
 
-	void initialization(const VectorX& amp, const VectorX& omega, const ComplexVectorX& zvals, const Mesh& mesh);
+  void initialization(const VectorX& amp, const VectorX& omega, const VectorX& zvals, const Mesh& mesh) {
+    _amp = amp;
+    _omega = omega;
+    _zvals = zvals;
+    _mesh = mesh;
+  }
 
-	VectorX _amp;				// wrinkle amplitude, stored as per vertex scalar
-	VectorX _omega;				// wrinkle frequency, stored as per edge one form
-	ComplexVectorX _zvals;		// wrinkle phase, stored as per vertex complex
-	Mesh _mesh;					// base mesh geometry
+  VectorX _amp;   // wrinkle amplitude, stored as per vertex scalar
+  VectorX _omega; // wrinkle frequency, stored as per edge one form
+  VectorX _zvals; // wrinkle phase, stored as per vertex complex. _zvals = [x_0, x_1, ..., x_n, y_0, y_1, ..., y_n]
+  Mesh _mesh;     // base mesh geometry
 };
+} // namespace ComplexWrinkleField

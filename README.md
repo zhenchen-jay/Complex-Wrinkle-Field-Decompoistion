@@ -1,5 +1,5 @@
 # Complex Wrinkle Field Decomposition
-This repository is the follow up work of the paper: "Complex Wrinkle Field Evolution".
+This repository is the follow-up work of the paper: "Complex Wrinkle Field Evolution".
 
 ## To download
 ```

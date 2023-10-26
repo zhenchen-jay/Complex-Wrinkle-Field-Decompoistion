@@ -18,5 +18,5 @@ namespace ComplexWrinkleField {
                    bool fixedBnd = false,                           // fix boundary points
                    SparseMatrixX* upS0 = nullptr,					// upsampled matrix
                    SparseMatrixX* upS1 = nullptr,					// upsampled matrix
-                   ComplexSparseMatrixX* upComplexS0 = nullptr);	// upsampled matrix
+                   SparseMatrixX* upComplexS0 = nullptr);	        // upsampled matrix
 }

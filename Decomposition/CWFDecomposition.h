@@ -75,12 +75,12 @@ namespace ComplexWrinkleField {
 
 
         // vertex phase update energies
-        double computeDifferenceFromZvals(const ComplexVectorX& zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
-        double computeCompatibilityEnergy(const VectorX& omega, const ComplexVectorX& zvals, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
+        double computeDifferenceFromZvals(const VectorX& zvals, VectorX *grad = nullptr, SparseMatrixX *hess = nullptr);
+        double computeCompatibilityEnergy(const VectorX& omega, const VectorX& zvals, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
         // compute compatibility between omega (_baseCWF.omega) and zvals
-        double computeUnitNormEnergy(const ComplexVectorX& zval, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr, bool isProj = true);
+        double computeUnitNormEnergy(const VectorX& zval, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr, bool isProj = true);
 
-        void testDifferenceFromZvals(const ComplexVectorX& zvals);
+        void testDifferenceFromZvals(const VectorX& zvals);
 
         // base mesh update energies
         double computeDifferenceFromBasemesh(const MatrixX& pos, VectorX* grad = nullptr, SparseMatrixX* hess = nullptr);
@@ -99,7 +99,7 @@ namespace ComplexWrinkleField {
         MatrixX _upV, _upN, _wrinkledV;
         Eigen::MatrixXi _upF, _wrinkledF;
 
-        ComplexSparseMatrixX _upZMat;
+        SparseMatrixX _upZMat;
         SparseMatrixX _wrinkleCompUpMat, _LoopS0;
 
         std::unordered_set<int> _clampedVertices;

@@ -31,14 +31,14 @@ VectorX getFaceArea(const Mesh& mesh);
 VectorX getEdgeArea(const Mesh& mesh);
 VectorX getVertArea(const Mesh& mesh);
 
-void getWrinkledMesh(const MatrixX& V, const Eigen::MatrixXi& F, const ComplexVectorX& zvals, MatrixX& wrinkledV, double scaleRatio, bool isTangentCorrection);
+void getWrinkledMesh(const MatrixX& V, const Eigen::MatrixXi& F, const VectorX& zvals, MatrixX& wrinkledV, double scaleRatio, bool isTangentCorrection);
 
 void computeBaryGradient(const Eigen::Vector3d& P0, const Eigen::Vector3d& P1, const Eigen::Vector3d& P2, const Eigen::Vector3d& bary, Eigen::Matrix3d& baryGrad);
 
 void mkdir(const std::string& foldername);
-VectorX inconsistencyComputation(const Mesh& mesh, const VectorX& edgeW, const ComplexVectorX& zval);
-void rescaleZvals(const ComplexVectorX& normalizedZvals, const VectorX& norm, ComplexVectorX& zvals);
-ComplexVectorX normalizeZvals(const ComplexVectorX& zvals);
+VectorX inconsistencyComputation(const Mesh& mesh, const VectorX& edgeW, const VectorX& zval);
+void rescaleZvals(const VectorX& normalizedZvals, const VectorX& norm, VectorX& zvals);
+VectorX normalizeZvals(const VectorX& zvals);
 
 // convert to sorted edge omega, where we sort omega by edge's first vertex id
 std::map<std::pair<int, int>, int> edgeMap(const std::vector< std::vector<int>>& edgeToVert);

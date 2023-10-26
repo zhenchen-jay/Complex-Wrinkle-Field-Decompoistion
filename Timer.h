@@ -4,20 +4,17 @@
 #include <chrono>
 #include <stdexcept>
 
-template<typename C = std::chrono::high_resolution_clock>
-class Timer
-{
-   std::chrono::time_point<C> start_v;
-   std::chrono::time_point<C> pause_v;
-   std::chrono::time_point<C> end_v;
+template <typename C = std::chrono::high_resolution_clock>
+class Timer {
+  std::chrono::time_point<C> start_v;
+  std::chrono::time_point<C> pause_v;
+  std::chrono::time_point<C> end_v;
 
   bool stopped;
   bool paused;
 
 public:
-  Timer() : stopped(false), paused(false) {
-    start_v = C::now();
-  }
+  Timer() : stopped(false), paused(false) { start_v = C::now(); }
   ~Timer() {}
 
   /**
@@ -40,8 +37,7 @@ public:
   }
 
   void resume() {
-    if(stopped)
-      throw std::runtime_error("cannot resume a stopped timer");
+    if (stopped) throw std::runtime_error("cannot resume a stopped timer");
     start_v += C::now() - pause_v;
     paused = false;
     stopped = false;
@@ -52,9 +48,8 @@ public:
     stopped = true;
   }
 
-  template<typename U = std::chrono::milliseconds>
-  typename U::rep elapsed() const
-  {
+  template <typename U = std::chrono::milliseconds>
+  typename U::rep elapsed() const {
     /*
     example:
       cns::timer t;
@@ -71,14 +66,11 @@ public:
     std::chrono::hours
     */
 
-      return
-        (stopped) ?
-          std::chrono::duration_cast<U>(end_v - start_v).count() :
-          (paused) ?
-            std::chrono::duration_cast<U>(pause_v - start_v).count() :
-            std::chrono::duration_cast<U>(C::now() - start_v).count();;
+    return (stopped)  ? std::chrono::duration_cast<U>(end_v - start_v).count()
+           : (paused) ? std::chrono::duration_cast<U>(pause_v - start_v).count()
+                      : std::chrono::duration_cast<U>(C::now() - start_v).count();
+    ;
   }
-
 };
 /* namespace cns */
 
