@@ -17,7 +17,9 @@
 
 #include "../../KnoppelStripePatterns.h"
 #include "../../Upsampling/Subdivision.h"
-
+#include "../../Upsampling/BaseLoop.h"
+#include "../../Upsampling/ComplexLoop.h"
+#include "../../Upsampling/StandardLoop.h"
 
 #include <CLI/CLI.hpp>
 
@@ -334,6 +336,67 @@ void callback() {
     if (ImGui::DragFloat("vec ratio", &(vecratio), 0.00005, 0, 1)) {
       updateView(false);
     }
+  }
+
+  if (ImGui::Button("Test Loop")) {
+      int nverts = baseMesh.GetVertCount();
+      int nedges = baseMesh.GetEdgeCount();
+
+      VectorX randVec = VectorX::Random(nverts);
+      VectorX dRandVec = VectorX::Zero(nedges);
+
+      SparseMatrixX d0(nedges, nverts);
+      std::vector<TripletX> T;
+
+      for (int i = 0; i < nedges; i++) {
+          int v0 = baseMesh.GetEdgeVerts(i)[0];
+          int v1 = baseMesh.GetEdgeVerts(i)[1];
+          T.push_back({ i, v0, 1.0 });
+          T.push_back({ i, v1, -1.0 });
+          dRandVec[i] = randVec[v0] - randVec[v1];
+      }
+      d0.setFromTriplets(T.begin(), T.end());
+
+      std::unique_ptr<ComplexWrinkleField::BaseLoop> loopPtr = std::make_unique<ComplexWrinkleField::StandardLoop>();
+      loopPtr->SetMesh(baseMesh);
+      loopPtr->SetBndFixFlag(isFixedBnd);
+
+      SparseMatrixX S0, S1;
+      loopPtr->BuildS0(S0);
+      loopPtr->BuildS1(S1);
+
+      VectorX subdVec = S1 * dRandVec;
+      VectorX subVec = S0 * randVec;
+
+      std::vector<std::vector<int>> edgeToVert;
+      loopPtr->GetSubdividedEdges(edgeToVert);
+
+      T.clear();
+      SparseMatrixX d1(edgeToVert.size(), S0.rows());
+      VectorX subdVec1 = VectorX::Zero(edgeToVert.size());
+      for (int i = 0; i < edgeToVert.size(); i++) {
+          int v0 = edgeToVert[i][0];
+          int v1 = edgeToVert[i][1];
+          T.push_back({ i, v0, 1.0 });
+          T.push_back({ i, v1, -1.0 });
+          subdVec1[i] = subVec[v0] - subVec[v1];
+      }
+      d1.setFromTriplets(T.begin(), T.end());
+
+      std::cout << "d * S0 - S1 * d: " << (d1 * S0 - S1 * d0).norm() << std::endl;
+
+      std::cout << "S0 norm: " << S0.norm() << std::endl;
+      std::cout << "S1 norm: " << S1.norm() << std::endl;
+
+      MatrixX diff = (d1 * S0 - S1 * d0).toDense();
+      for (int i = 0; i < diff.rows(); i++) {
+          if (diff.row(i).norm() > 1e-4) {
+              std::cout << "edge id: " << i << " is wrong" << std::endl;
+          }
+      }
+
+      //std::cout << (subdVec - subdVec1).transpose() << std::endl;
+      
   }
 
   ImGui::PopItemWidth();

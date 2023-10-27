@@ -286,7 +286,6 @@ void BaseLoop::AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triplet
       eValues.push_back(std::make_pair(vEdges[2], 0.15625 / 3));
     }
 
-
     fValues.push_back(std::make_pair(vFaces[0], 0.15625 / 3));
     fValues.push_back(std::make_pair(vFaces[1], -0.15625 / 3));
   } else if (faceCount == 3 && edgeInVert == 1) {
@@ -353,10 +352,6 @@ void BaseLoop::AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triplet
       eValues.push_back(std::make_pair(vEdges[1], 0.3125));
       eValues.push_back(std::make_pair(vEdges[2], 0.09375));
       eValues.push_back(std::make_pair(vEdges[3], 0.125 / 3));
-
-      fValues.push_back(std::make_pair(vFaces[0], 0.15625 / 3));
-      fValues.push_back(std::make_pair(vFaces[1], -0.03125 / 3));
-      fValues.push_back(std::make_pair(vFaces[2], -0.125 / 3));
     } else {
       // Fig2 even boundary adjacent rules top-right in S.I. of [de Goes et al. 2016]
       eValues.push_back(std::make_pair(vEdges[0], 0.15625 / 3));
@@ -365,6 +360,10 @@ void BaseLoop::AssembleEdgeEvenPartialBoundary(int edge, int vertInEdge, Triplet
       eValues.push_back(std::make_pair(vEdges[3], 0.125 / 3));
       eValues.push_back(std::make_pair(vEdges.back(), -0.125));
     }
+
+    fValues.push_back(std::make_pair(vFaces[0], 0.15625 / 3));
+    fValues.push_back(std::make_pair(vFaces[1], -0.03125 / 3));
+    fValues.push_back(std::make_pair(vFaces[2], -0.125 / 3));
   } else if (edgeInVert == edgeCount - 2) {
     if (_isFixBnd) {
       // Symmetric case of Fig1 even boundary adjacent rules top-right in S.I. of [Chen et al. 2023]
